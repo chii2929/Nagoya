@@ -526,8 +526,11 @@
 
       <!-- Expense Records Table / Cards -->
       <div class="glass-card rounded-2xl p-4 sm:p-5">
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="font-display text-base font-bold text-slateink">支出明細</h3>
+        <div class="flex items-center justify-between gap-2 flex-wrap mb-3">
+          <div>
+            <h3 class="font-display text-base font-bold text-slateink">支出明細</h3>
+            <p class="text-[11px] text-slate-500">新增或編輯時自動依日期排序，也可按住左側「⋮⋮」自由拖曳調整順序</p>
+          </div>
           <select id="expenseCategoryFilter" onchange="renderExpenses()" class="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700">
             <option value="ALL">全部分類</option>
             <option value="機票">✈️ 機票</option>
@@ -725,7 +728,7 @@
       </div>
       <form id="hotelForm" onsubmit="saveHotel(event)" class="space-y-3.5 text-sm">
         <input type="hidden" id="editHotelId" />
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label class="block text-xs font-bold text-slate-600 mb-1">城市 / 區域 *</label>
             <input type="text" id="htCity" required placeholder="例如：高山市" class="w-full rounded-xl border border-slate-200 px-3 py-2" />
@@ -801,7 +804,7 @@
             </select>
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">日期 / 備註</label>
+            <label class="block text-xs font-bold text-slate-600 mb-1">日期（選填）</label>
             <input type="date" id="exDate" class="w-full rounded-xl border border-slate-200 px-3 py-2 bg-snow focus:outline-none focus:ring-2 focus:ring-warmwood/40" />
           </div>
         </div>
@@ -1046,23 +1049,23 @@
     };
 
     const DEFAULT_DAYS_META = [
-      { day: 1,  date: '1/11 (一)', city: '名古屋', theme: '抵達暖身・重口味美食第一餐' },
-      { day: 2,  date: '1/12 (二)', city: '名古屋 → 金澤', theme: '喫茶店早餐・補裝備・傍晚輕裝搭車去金澤' },
-      { day: 3,  date: '1/13 (三)', city: '金澤', theme: '海鮮丼・兼六園雪景・21世紀美術館' },
-      { day: 4,  date: '1/14 (四)', city: '金澤 → 合掌村 → 高山', theme: '童話合掌村踩雪・傍晚進高山吃飛驒牛' },
-      { day: 5,  date: '1/15 (五)', city: '高山市', theme: '宮川朝市・木造老街・雪景咖啡廳' },
-      { day: 6,  date: '1/16 (六)', city: '高山 ↔ 平湯溫泉', theme: '夢幻雪見露天日歸溫泉・高山拉麵' },
-      { day: 7,  date: '1/17 (日)', city: '高山 → 郡上八幡', theme: '水鄉小鎮散步・早睡備戰滑雪' },
-      { day: 8,  date: '1/18 (一)', city: '郡上 / 明寶雪場', theme: '明寶滑雪 Day 1（平日）・新手中文拼團教練課' },
-      { day: 9,  date: '1/19 (二)', city: '郡上 / 明寶雪場', theme: '明寶滑雪 Day 2（平日）・滑完泡湯星館溫泉' },
-      { day: 10, date: '1/20 (三)', city: '明寶 → 名古屋', theme: '明寶滑雪 Day 3（平日）・傍晚回名古屋連住 5 晚' },
-      { day: 11, date: '1/21 (四)', city: '名古屋 / 名花之里', theme: '睡到自然醒舒緩鐵腿・冬季點燈花海' },
-      { day: 12, date: '1/22 (五)', city: '名古屋近郊', theme: '彈性日：犬山城老街 / 熱田神宮 / 吉卜力' },
-      { day: 13, date: '1/23 (六)', city: '名古屋', theme: '大須商店街散步・特色咖啡廳慢活' },
-      { day: 14, date: '1/24 (日)', city: '名古屋', theme: '百貨榮商圈大血拚・鰻魚飯三吃收尾' },
-      { day: 15, date: '1/25 (一)', city: '名古屋 → 台北', theme: '打包戰利品・機場採買平安返家' }
+      { day: 1,  isoDate: '2027-01-11', date: '1/11 (一)', city: '名古屋', theme: '抵達暖身・重口味美食第一餐' },
+      { day: 2,  isoDate: '2027-01-12', date: '1/12 (二)', city: '名古屋 → 金澤', theme: '喫茶店早餐・補裝備・傍晚輕裝搭車去金澤' },
+      { day: 3,  isoDate: '2027-01-13', date: '1/13 (三)', city: '金澤', theme: '海鮮丼・兼六園雪景・21世紀美術館' },
+      { day: 4,  isoDate: '2027-01-14', date: '1/14 (四)', city: '金澤 → 合掌村 → 高山', theme: '童話合掌村踩雪・傍晚進高山吃飛驒牛' },
+      { day: 5,  isoDate: '2027-01-15', date: '1/15 (五)', city: '高山市', theme: '宮川朝市・木造老街・雪景咖啡廳' },
+      { day: 6,  isoDate: '2027-01-16', date: '1/16 (六)', city: '高山 ↔ 平湯溫泉', theme: '夢幻雪見露天日歸溫泉・高山拉麵' },
+      { day: 7,  isoDate: '2027-01-17', date: '1/17 (日)', city: '高山 → 郡上八幡', theme: '水鄉小鎮散步・早睡備戰滑雪' },
+      { day: 8,  isoDate: '2027-01-18', date: '1/18 (一)', city: '郡上 / 明寶雪場', theme: '明寶滑雪 Day 1（平日）・新手中文拼團教練課' },
+      { day: 9,  isoDate: '2027-01-19', date: '1/19 (二)', city: '郡上 / 明寶雪場', theme: '明寶滑雪 Day 2（平日）・滑完泡湯星館溫泉' },
+      { day: 10, isoDate: '2027-01-20', date: '1/20 (三)', city: '明寶 → 名古屋', theme: '明寶滑雪 Day 3（平日）・傍晚回名古屋連住 5 晚' },
+      { day: 11, isoDate: '2027-01-21', date: '1/21 (四)', city: '名古屋 / 名花之里', theme: '睡到自然醒舒緩鐵腿・冬季點燈花海' },
+      { day: 12, isoDate: '2027-01-22', date: '1/22 (五)', city: '名古屋近郊', theme: '彈性日：犬山城老街 / 熱田神宮 / 吉卜力' },
+      { day: 13, isoDate: '2027-01-23', date: '1/23 (六)', city: '名古屋', theme: '大須商店街散步・特色咖啡廳慢活' },
+      { day: 14, isoDate: '2027-01-24', date: '1/24 (日)', city: '名古屋', theme: '百貨榮商圈大血拚・鰻魚飯三吃收尾' },
+      { day: 15, isoDate: '2027-01-25', date: '1/25 (一)', city: '名古屋 → 台北', theme: '打包戰利品・機場採買平安返家' }
     ];
-    // 把 2027-01-14 轉成 1/14 (四)
+
     function formatShortCalDate(isoStr) {
       if (!isoStr || !/^\d{4}-\d{2}-\d{2}$/.test(isoStr)) return isoStr || '';
       const [y, m, d] = isoStr.split('-').map(Number);
@@ -1071,14 +1074,20 @@
       return `${m}/${d} (${wds[dt.getDay()]})`;
     }
 
-    // 算出往後幾天的 YYYY-MM-DD（用來預設退房日或新增天數）
+    function formatFullCalDate(isoStr) {
+      if (!isoStr || !/^\d{4}-\d{2}-\d{2}$/.test(isoStr)) return isoStr || '';
+      const [y, m, d] = isoStr.split('-').map(Number);
+      const dt = new Date(y, m - 1, d);
+      const wds = ['日', '一', '二', '三', '四', '五', '六'];
+      return `${y}/${String(m).padStart(2, '0')}/${String(d).padStart(2, '0')} (${wds[dt.getDay()]})`;
+    }
+
     function addDaysISO(isoStr, offsetDays) {
       const [y, m, d] = (isoStr || '2027-01-11').split('-').map(Number);
       const dt = new Date(y, m - 1, d + offsetDays);
       return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
     }
 
-    // 把舊資料像 "1/14 (四)" 轉回日曆看得懂的 "2027-01-14"
     function parseLegacyDateToISO(str, fallback = '2027-01-11') {
       if (!str) return fallback;
       if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
@@ -1092,7 +1101,6 @@
       return fallback;
     }
 
-    // 把飯店入住日與退房日組成 "1/14 (四) - 1/17 (日)（3 晚）"
     function formatHotelDateRange(checkIn, checkOut) {
       if (!checkIn) return '';
       const s1 = formatShortCalDate(checkIn);
@@ -1107,6 +1115,8 @@
     function getDefaultData() {
       return {
         settings: {
+          tripStartDate: '2027-01-11',
+          tripEndDate: '2027-01-25',
           tripDateRange: '2027/01/11 (一) – 01/25 (一)',
           tripTitle: '日本中部・北陸 15 天冬日獨旅手帳',
           tripSubtitle: '名古屋大本營 × 金澤 × 白川鄉合掌村 × 高山雪見溫泉 × 明寶三天滑雪',
@@ -1164,14 +1174,14 @@
           { id: 'i36', day: 15, timeSlot: '下午', title: '✈️ 名古屋 → 台北 平安回家', category: '交通', status: '尚未預約', location: '中部國際機場 (NGO)', notes: '充飽電迎接新階段！' }
         ],
         transports: [
-          { id: 't1', type: '航班', date: '1/11 (一)', route: '台北桃園 (TPE) → 名古屋中部 (NGO)', time: '待填入航班時間', status: '尚未預約', notes: '確認含託運行李重量（回程血拚建議 20kg 以上）' },
-          { id: 't2', type: 'JR/新幹線', date: '1/12 (二) 傍晚', route: '名古屋站 → 敦賀 → 金澤站', time: '約 2.5 小時', status: '尚未預約', notes: '傍晚搭 JR 特急白鷺號轉北陸新幹線，晚上直接進金澤飯店睡飽' },
-          { id: 't3', type: '預約巴士', date: '1/14 (四)', route: '金澤站 → 白川鄉合掌村', time: '約 1 小時 15 分', status: '尚未預約', notes: '⚠️ 12/14 台灣時間 08:00 上 Japan Bus Online / 濃飛官網搶票' },
-          { id: 't4', type: '預約巴士', date: '1/14 (四)', route: '白川鄉合掌村 → 高山濃飛巴士中心', time: '約 50 分鐘', status: '尚未預約', notes: '⚠️ 與金澤→白川鄉同時間搶票，預留 3.5~4 小時逛合掌村' },
-          { id: 't5', type: '預約巴士', date: '1/17 (日)', route: '高山 → 郡上八幡', time: '約 1.5 小時', status: '尚未預約', notes: '提前 1 個月（12/17）上 Highwaybus.com 訂位' },
-          { id: 't6', type: '接駁車', date: '1/18–1/20', route: '郡上八幡 ↔ 明寶滑雪場（免費接駁）', time: '單程約 45 分鐘', status: '尚未預約', notes: '⚠️ 12 月初上明寶雪場官網預約三天平日來回班次' },
-          { id: 't7', type: '預約巴士', date: '1/20 (三)', route: '郡上八幡 → 名古屋名鐵巴士中心', time: '約 1.5 小時', status: '尚未預約', notes: '提前 1 個月（12/20）預約回程座位' },
-          { id: 't8', type: '航班', date: '1/25 (一)', route: '名古屋中部 (NGO) → 台北桃園 (TPE)', time: '待填入航班時間', status: '尚未預約', notes: '提早 2.5 小時到機場逛免稅店' }
+          { id: 't1', type: '航班', isoDate: '2027-01-11', date: '1/11 (一)', route: '台北桃園 (TPE) → 名古屋中部 (NGO)', time: '待填入航班時間', status: '尚未預約', notes: '確認含託運行李重量（回程血拚建議 20kg 以上）' },
+          { id: 't2', type: 'JR/新幹線', isoDate: '2027-01-12', date: '1/12 (二) 傍晚', route: '名古屋站 → 敦賀 → 金澤站', time: '約 2.5 小時', status: '尚未預約', notes: '傍晚搭 JR 特急白鷺號轉北陸新幹線，晚上直接進金澤飯店睡飽' },
+          { id: 't3', type: '預約巴士', isoDate: '2027-01-14', date: '1/14 (四)', route: '金澤站 → 白川鄉合掌村', time: '約 1 小時 15 分', status: '尚未預約', notes: '⚠️ 12/14 台灣時間 08:00 上 Japan Bus Online / 濃飛官網搶票' },
+          { id: 't4', type: '預約巴士', isoDate: '2027-01-14', date: '1/14 (四)', route: '白川鄉合掌村 → 高山濃飛巴士中心', time: '約 50 分鐘', status: '尚未預約', notes: '⚠️ 與金澤→白川鄉同時間搶票，預留 3.5~4 小時逛合掌村' },
+          { id: 't5', type: '預約巴士', isoDate: '2027-01-17', date: '1/17 (日)', route: '高山 → 郡上八幡', time: '約 1.5 小時', status: '尚未預約', notes: '提前 1 個月（12/17）上 Highwaybus.com 訂位' },
+          { id: 't6', type: '接駁車', isoDate: '2027-01-18', date: '1/18–1/20', route: '郡上八幡 ↔ 明寶滑雪場（免費接駁）', time: '單程約 45 分鐘', status: '尚未預約', notes: '⚠️ 12 月初上明寶雪場官網預約三天平日來回班次' },
+          { id: 't7', type: '預約巴士', isoDate: '2027-01-20', date: '1/20 (三)', route: '郡上八幡 → 名古屋名鐵巴士中心', time: '約 1.5 小時', status: '尚未預約', notes: '提前 1 個月（12/20）預約回程座位' },
+          { id: 't8', type: '航班', isoDate: '2027-01-25', date: '1/25 (一)', route: '名古屋中部 (NGO) → 台北桃園 (TPE)', time: '待填入航班時間', status: '尚未預約', notes: '提早 2.5 小時到機場逛免稅店' }
         ],
         reminders: [
           { id: 'r1', date: '2026-12-01', time: '09:00', title: '明寶滑雪場免費接駁車開放預約', note: '官網預約 1/18–1/20 三天平日「郡上八幡 ↔ 雪場」來回班次', done: false },
@@ -1180,19 +1190,19 @@
           { id: 'r4', date: '2026-12-20', time: '08:00', title: '1/20 郡上八幡 → 名古屋高速巴士', note: '提前一個月預約回程座位', done: false }
         ],
         hotels: [
-          { id: 'h1', city: '名古屋（前段）', dates: '1/11 - 1/12（1 晚）', name: '名古屋車站周邊商務旅館（待訂）', price: 2300, status: '尚未預約', address: '建議選名古屋站櫻通口或太閣通口大馬路旁', notes: '與後 5 晚訂同一間！訂房前先寫信確認 1/12–1/20 能否寄放大行李（共 8 晚）' },
-          { id: 'h2', city: '金澤市', dates: '1/12 - 1/14（2 晚）', name: '金澤車站周邊飯店（待訂）', price: 4400, status: '尚未預約', address: '金澤站兼六園口步行 5 分鐘內', notes: '1/12 晚上入住、1/14 一早搭合掌村巴士超方便，建議選有投幣洗烘衣機' },
-          { id: 'h3', city: '高山市', dates: '1/14 - 1/17（3 晚）', name: '高山車站附設天然溫泉飯店（待訂）', price: 8200, status: '尚未預約', address: 'JR 高山站步行 5 分鐘內', notes: '連住 3 晚不用收行李，每天晚上回飯店直接泡溫泉大浴場' },
-          { id: 'h4', city: '郡上八幡', dates: '1/17 - 1/20（3 晚）', name: '郡上八幡在地旅館 / 民宿（待訂）', price: 6500, status: '尚未預約', address: '確認靠近明寶免費接駁車乘車點', notes: '連住 3 晚專心滑三天平日雪，確認附近晚餐選擇' },
-          { id: 'h5', city: '名古屋（後段）', dates: '1/20 - 1/25（5 晚）', name: '名古屋車站周邊商務旅館（同前段）', price: 11500, status: '尚未預約', address: '名古屋車站周邊', notes: '連住 5 晚超爽不用再打包！領回大行李箱慢慢逛街血拚' }
+          { id: 'h1', city: '名古屋（前段）', checkIn: '2027-01-11', checkOut: '2027-01-12', dates: '1/11 (一) - 1/12 (二)（1 晚）', name: '名古屋車站周邊商務旅館（待訂）', price: 2300, status: '尚未預約', address: '建議選名古屋站櫻通口或太閣通口大馬路旁', notes: '與後 5 晚訂同一間！訂房前先寫信確認 1/12–1/20 能否寄放大行李（共 8 晚）' },
+          { id: 'h2', city: '金澤市', checkIn: '2027-01-12', checkOut: '2027-01-14', dates: '1/12 (二) - 1/14 (四)（2 晚）', name: '金澤車站周邊飯店（待訂）', price: 4400, status: '尚未預約', address: '金澤站兼六園口步行 5 分鐘內', notes: '1/12 晚上入住、1/14 一早搭合掌村巴士超方便，建議選有投幣洗烘衣機' },
+          { id: 'h3', city: '高山市', checkIn: '2027-01-14', checkOut: '2027-01-17', dates: '1/14 (四) - 1/17 (日)（3 晚）', name: '高山車站附設天然溫泉飯店（待訂）', price: 8200, status: '尚未預約', address: 'JR 高山站步行 5 分鐘內', notes: '連住 3 晚不用收行李，每天晚上回飯店直接泡溫泉大浴場' },
+          { id: 'h4', city: '郡上八幡', checkIn: '2027-01-17', checkOut: '2027-01-20', dates: '1/17 (日) - 1/20 (三)（3 晚）', name: '郡上八幡在地旅館 / 民宿（待訂）', price: 6500, status: '尚未預約', address: '確認靠近明寶免費接駁車乘車點', notes: '連住 3 晚專心滑三天平日雪，確認附近晚餐選擇' },
+          { id: 'h5', city: '名古屋（後段）', checkIn: '2027-01-20', checkOut: '2027-01-25', dates: '1/20 (三) - 1/25 (一)（5 晚）', name: '名古屋車站周邊商務旅館（同前段）', price: 11500, status: '尚未預約', address: '名古屋車站周邊', notes: '連住 5 晚超爽不用再打包！領回大行李箱慢慢逛街血拚' }
         ],
         expenses: [
-          { id: 'e1', title: '台北 ↔ 名古屋來回機票（預估）', category: '機票', amount: 13500, currency: 'TWD', date: '行前', isEstimate: true },
-          { id: 'e2', title: '14 晚住宿總計（預估）', category: '住宿', amount: 32900, currency: 'TWD', date: '1/11–1/25', isEstimate: true },
-          { id: 'e3', title: '跨區 JR、新幹線、巴士與市區交通', category: '交通', amount: 39000, currency: 'JPY', date: '全程', isEstimate: true },
-          { id: 'e4', title: '明寶滑雪 3 天（平日雪票＋租裝備＋拼團教練）', category: '滑雪', amount: 58000, currency: 'JPY', date: '1/18–1/20', isEstimate: true },
-          { id: 'e5', title: '15 天每日餐飲、飛驒牛、咖啡廳', category: '餐飲', amount: 55000, currency: 'JPY', date: '全程', isEstimate: true },
-          { id: 'e6', title: '溫泉泡湯、兼六園、名花之里門票', category: '門票與體驗', amount: 12000, currency: 'JPY', date: '全程', isEstimate: true }
+          { id: 'e1', title: '台北 ↔ 名古屋來回機票（預估）', category: '機票', amount: 13500, currency: 'TWD', isoDate: '', date: '行前', isEstimate: true },
+          { id: 'e2', title: '14 晚住宿總計（預估）', category: '住宿', amount: 32900, currency: 'TWD', isoDate: '2027-01-11', date: '1/11 (一)', isEstimate: true },
+          { id: 'e3', title: '跨區 JR、新幹線、巴士與市區交通', category: '交通', amount: 39000, currency: 'JPY', isoDate: '2027-01-12', date: '1/12 (二)', isEstimate: true },
+          { id: 'e4', title: '15 天每日餐飲、飛驒牛、咖啡廳', category: '餐飲', amount: 55000, currency: 'JPY', isoDate: '2027-01-14', date: '1/14 (四)', isEstimate: true },
+          { id: 'e5', title: '溫泉泡湯、兼六園、名花之里門票', category: '門票與體驗', amount: 12000, currency: 'JPY', isoDate: '2027-01-16', date: '1/16 (六)', isEstimate: true },
+          { id: 'e6', title: '明寶滑雪 3 天（平日雪票＋租裝備＋拼團教練）', category: '滑雪', amount: 58000, currency: 'JPY', isoDate: '2027-01-18', date: '1/18 (一)', isEstimate: true }
         ],
         phrases: [
           { id: 'p1', category: '餐廳點餐', zh: '不好意思，一位。', ja: 'すみません、一人です。', reading: 'Su-mi-ma-sen, hi-to-ri de-su', en: 'Excuse me, table for one, please.' },
@@ -1226,6 +1236,7 @@
     let snowEnabled = true;
     let sortableInstances = [];
     let phraseSortable = null;
+    let expenseSortable = null;
 
     function loadData() {
       try {
@@ -1233,15 +1244,32 @@
         if (raw) {
           const parsed = JSON.parse(raw);
           const defaults = getDefaultData();
+          const mergedDays = (Array.isArray(parsed.daysMeta) && parsed.daysMeta.length > 0 ? parsed.daysMeta : defaults.daysMeta).map((d, i) => {
+            const iso = d.isoDate || parseLegacyDateToISO(d.date, addDaysISO('2027-01-11', i));
+            return { ...d, day: Number(d.day) || (i + 1), isoDate: iso, date: d.date || formatShortCalDate(iso) };
+          });
+          const mergedTransports = (Array.isArray(parsed.transports) ? parsed.transports : defaults.transports).map(t => {
+            const iso = t.isoDate || parseLegacyDateToISO(t.date, '2027-01-11');
+            return { ...t, isoDate: iso, date: t.date || formatShortCalDate(iso) };
+          });
+          const mergedHotels = (Array.isArray(parsed.hotels) ? parsed.hotels : defaults.hotels).map(h => {
+            const ci = h.checkIn || parseLegacyDateToISO(h.dates, '2027-01-11');
+            const co = h.checkOut || addDaysISO(ci, 1);
+            return { ...h, checkIn: ci, checkOut: co, dates: h.dates || formatHotelDateRange(ci, co) };
+          });
+          const mergedExpenses = (Array.isArray(parsed.expenses) ? parsed.expenses : defaults.expenses).map(ex => {
+            const iso = ex.isoDate !== undefined ? ex.isoDate : parseLegacyDateToISO(ex.date, '');
+            return { ...ex, isoDate: iso, date: iso ? formatShortCalDate(iso) : (ex.date || '') };
+          });
           return {
             settings: { ...defaults.settings, ...(parsed.settings || {}) },
-            daysMeta: Array.isArray(parsed.daysMeta) && parsed.daysMeta.length > 0 ? parsed.daysMeta : defaults.daysMeta,
-            expandedDays: Array.isArray(parsed.expandedDays) ? parsed.expandedDays : defaults.expandedDays,
+            daysMeta: mergedDays,
+            expandedDays: Array.isArray(parsed.expandedDays) ? parsed.expandedDays.map(Number) : defaults.expandedDays,
             itinerary: Array.isArray(parsed.itinerary) ? parsed.itinerary : defaults.itinerary,
-            transports: Array.isArray(parsed.transports) ? parsed.transports : defaults.transports,
+            transports: mergedTransports,
             reminders: Array.isArray(parsed.reminders) ? parsed.reminders : defaults.reminders,
-            hotels: Array.isArray(parsed.hotels) ? parsed.hotels : defaults.hotels,
-            expenses: Array.isArray(parsed.expenses) ? parsed.expenses : defaults.expenses,
+            hotels: mergedHotels,
+            expenses: mergedExpenses,
             phrases: Array.isArray(parsed.phrases) ? parsed.phrases : defaults.phrases
           };
         }
@@ -1412,7 +1440,9 @@
 
     function addDay() {
       const n = appData.daysMeta.length + 1;
-      appData.daysMeta.push({ day: n, label: '', date: '', city: '', theme: '' });
+      const prev = appData.daysMeta[appData.daysMeta.length - 1];
+      const nextIso = prev && prev.isoDate ? addDaysISO(prev.isoDate, 1) : '2027-01-26';
+      appData.daysMeta.push({ day: n, label: '', isoDate: nextIso, date: formatShortCalDate(nextIso), city: '', theme: '' });
       appData.expandedDays.push(n);
       persistData(`已新增 DAY ${n}`);
       renderItinerary();
@@ -1420,15 +1450,15 @@
     }
 
     function confirmDeleteDay(dayNum) {
-      const meta = appData.daysMeta.find(d => d.day === dayNum);
+      const meta = appData.daysMeta.find(d => Number(d.day) === Number(dayNum));
       if (!meta) return;
       closeModal('dayMetaModal');
       document.getElementById('confirmTitle').textContent = '確定要刪除這一天嗎？';
       document.getElementById('confirmMessage').textContent = `即將刪除「${meta.label || 'DAY ' + dayNum}」及當天所有行程，後面的天數會自動往前遞補。`;
       document.getElementById('confirmActionBtn').onclick = () => {
-        appData.itinerary = appData.itinerary.filter(it => it.day !== dayNum);
-        appData.daysMeta = appData.daysMeta.filter(d => d.day !== dayNum);
-        appData.expandedDays = appData.expandedDays.filter(n => n !== dayNum);
+        appData.itinerary = appData.itinerary.filter(it => Number(it.day) !== Number(dayNum));
+        appData.daysMeta = appData.daysMeta.filter(d => Number(d.day) !== Number(dayNum));
+        appData.expandedDays = appData.expandedDays.filter(n => Number(n) !== Number(dayNum));
         renumberDays();
         closeModal('confirmModal');
         persistData('已刪除這一天');
@@ -1460,7 +1490,6 @@
     }
 
     function selectCategory(cat) {
-      // Clicking the already active category a second time resets back to '全部'
       if (cat !== '全部' && currentCategoryFilter === cat) {
         currentCategoryFilter = '全部';
       } else {
@@ -1472,7 +1501,6 @@
 
     function toggleDay(dayNum) {
       const num = Number(dayNum);
-      // 如果當時有開著篩選或搜尋，點收合時一併清空篩選避免被強制鎖住展開
       const searchEl = document.getElementById('searchInput');
       const statusEl = document.getElementById('statusFilterSelect');
       const hadFilter = currentCategoryFilter !== '全部'
@@ -1519,7 +1547,8 @@
       const dc = document.getElementById('statDayCount');
       if (dc) dc.textContent = `${appData.daysMeta.length} 天 ${Math.max(0, appData.daysMeta.length - 1)} 夜`;
       const html = appData.daysMeta.map(meta => {
-        const dayItemsAll = appData.itinerary.filter(item => item.day === meta.day);
+        const dayNum = Number(meta.day);
+        const dayItemsAll = appData.itinerary.filter(item => Number(item.day) === dayNum);
         const filteredItems = dayItemsAll.filter(item => {
           if (currentCategoryFilter !== '全部' && item.category !== currentCategoryFilter) return false;
           if (statusFilter !== 'ALL' && item.status !== statusFilter) return false;
@@ -1532,7 +1561,7 @@
 
         if (isFiltering && filteredItems.length === 0) return '';
 
-        const isExpanded = isFiltering || appData.expandedDays.includes(meta.day);
+        const isExpanded = isFiltering || appData.expandedDays.some(d => Number(d) === dayNum);
         meta.city = meta.city || ''; meta.date = meta.date || ''; meta.theme = meta.theme || '';
         const isSkiDay = meta.city.includes('明寶') || meta.city.includes('郡上');
         const badgeBg = isSkiDay ? 'bg-warmwood' : 'bg-pine';
@@ -1541,12 +1570,12 @@
           <div class="glass-card rounded-2xl border border-white/90">
             <!-- Sticky Day Accordion Header -->
             <div
-              onclick="toggleDay(${meta.day})"
+              onclick="toggleDay(${dayNum})"
               class="day-sticky-header bg-white/95 backdrop-blur-md px-4 py-3.5 ${isExpanded ? 'rounded-t-2xl border-b border-slate-200/70' : 'rounded-2xl'} flex flex-col sm:flex-row sm:items-center justify-between gap-2 cursor-pointer hover:bg-snow/95 transition shadow-sm"
             >
               <div class="flex items-center gap-2.5 min-w-0">
                 <span class="text-slate-400 text-xs transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}">▶</span>
-                <span class="${badgeBg} text-white font-display text-xs font-bold px-2.5 py-1 rounded-lg shrink-0">${escapeHtml(meta.label || 'DAY ' + meta.day)}</span>
+                <span class="${badgeBg} text-white font-display text-xs font-bold px-2.5 py-1 rounded-lg shrink-0">${escapeHtml(meta.label || 'DAY ' + dayNum)}</span>
                 <span class="text-xs font-bold text-slate-600 shrink-0">${escapeHtml(meta.date)}</span>
                 <span class="px-2 py-0.5 rounded-full bg-ice/80 text-pine text-[11px] font-bold shrink-0">${escapeHtml(meta.city)}</span>
                 <span class="text-xs text-slate-500 truncate hidden md:inline">${escapeHtml(meta.theme)}</span>
@@ -1556,7 +1585,7 @@
                 <span class="text-[11px] text-slate-400 mr-1">${filteredItems.length} 項</span>
                 <button
                   type="button"
-                  onclick="event.stopPropagation(); openDayMetaModal(${meta.day})"
+                  onclick="event.stopPropagation(); openDayMetaModal(${dayNum})"
                   class="px-2.5 py-1 rounded-lg bg-snow hover:bg-ice/70 border border-slate-200 text-xs font-medium text-slate-600 transition"
                   title="編輯大標與概述"
                 >
@@ -1564,7 +1593,7 @@
                 </button>
                 <button
                   type="button"
-                  onclick="event.stopPropagation(); openItemModal(null, ${meta.day})"
+                  onclick="event.stopPropagation(); openItemModal(null, ${dayNum})"
                   class="px-2.5 py-1 rounded-lg bg-pine/10 hover:bg-pine hover:text-white text-pine text-xs font-bold transition"
                   title="在此天新增行程"
                 >
@@ -1579,7 +1608,7 @@
                 <div class="text-xs text-slate-500 md:hidden pb-1 border-b border-slate-100">
                   ${escapeHtml(meta.theme)}
                 </div>
-                <div class="day-items-container space-y-2 min-h-[12px]" data-day="${meta.day}">
+                <div class="day-items-container space-y-2 min-h-[12px]" data-day="${dayNum}">
                   ${filteredItems.length === 0 ? `
                     <div class="text-center py-5 text-xs text-slate-400 bg-white/50 rounded-xl border border-dashed border-slate-200">
                       這一天還沒有行程，點右上角「＋新增」加入安排吧！
@@ -1689,17 +1718,18 @@
 
       const rebuilt = [];
       appData.daysMeta.forEach(meta => {
-        if (domDays.has(meta.day)) {
-          const ids = orderedByDay.get(meta.day) || [];
+        const dNum = Number(meta.day);
+        if (domDays.has(dNum)) {
+          const ids = orderedByDay.get(dNum) || [];
           ids.forEach(id => {
             const found = itemMap.get(id);
             if (found) {
-              found.day = meta.day;
+              found.day = dNum;
               rebuilt.push(found);
             }
           });
         } else {
-          appData.itinerary.filter(i => i.day === meta.day).forEach(i => rebuilt.push(i));
+          appData.itinerary.filter(i => Number(i.day) === dNum).forEach(i => rebuilt.push(i));
         }
       });
 
@@ -1715,7 +1745,7 @@
       if (!target) return;
       const sameDayIndices = [];
       appData.itinerary.forEach((item, idx) => {
-        if (item.day === target.day) sameDayIndices.push(idx);
+        if (Number(item.day) === Number(target.day)) sameDayIndices.push(idx);
       });
       const pos = sameDayIndices.findIndex(idx => appData.itinerary[idx].id === id);
       const swapPos = pos + direction;
@@ -1730,7 +1760,6 @@
     // ==================== BOOKING REMINDERS (AUTO-SORTED) ====================
     function getSortedReminders() {
       return [...(appData.reminders || [])].sort((a, b) => {
-        // Incomplete reminders always stay above completed ones
         if (!!a.done !== !!b.done) return a.done ? 1 : -1;
         const aKey = `${a.date || '9999-12-31'}T${a.time || '23:59'}`;
         const bKey = `${b.date || '9999-12-31'}T${b.time || '23:59'}`;
@@ -1922,7 +1951,17 @@
       }).join('');
     }
 
-function sortExpensesByDate() {
+    // ==================== EXPENSES & BUDGET RENDERING ====================
+    function updateSettings() {
+      const rate = parseFloat(document.getElementById('exchangeRateInput').value);
+      const limit = parseFloat(document.getElementById('budgetLimitInput').value);
+      if (!isNaN(rate) && rate > 0) appData.settings.exchangeRate = rate;
+      if (!isNaN(limit) && limit >= 0) appData.settings.budgetLimit = limit;
+      persistData('已更新匯率與預算設定');
+      renderExpenses();
+    }
+
+    function sortExpensesByDate() {
       appData.expenses.sort((a, b) => {
         const da = a.isoDate || parseLegacyDateToISO(a.date, '');
         const db = b.isoDate || parseLegacyDateToISO(b.date, '');
@@ -1943,19 +1982,23 @@ function sortExpensesByDate() {
       renderExpenses();
     }
 
-    function initExpenseSortable() {
-      if (typeof Sortable === 'undefined') return;
+    function initExpenseSortable(isFiltering) {
+      if (expenseSortable) {
+        try { expenseSortable.destroy(); } catch (e) {}
+        expenseSortable = null;
+      }
+      if (isFiltering || typeof Sortable === 'undefined') return;
       const listEl = document.getElementById('expenseList');
       if (!listEl) return;
-      if (listEl._sortableInstance) {
-        listEl._sortableInstance.destroy();
-      }
-      listEl._sortableInstance = new Sortable(listEl, {
+
+      expenseSortable = new Sortable(listEl, {
         handle: '.expense-drag-handle',
+        draggable: '.expense-card',
         animation: 180,
         ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
         onEnd: () => {
-          const orderedIds = Array.from(listEl.querySelectorAll('[data-expense-id]')).map(el => el.dataset.expenseId);
+          const orderedIds = Array.from(listEl.querySelectorAll('.expense-card')).map(el => el.dataset.expenseId);
           const map = new Map(appData.expenses.map(ex => [ex.id, ex]));
           const reordered = orderedIds.map(id => map.get(id)).filter(Boolean);
           appData.expenses.forEach(ex => {
@@ -1967,93 +2010,46 @@ function sortExpensesByDate() {
       });
     }
 
-    // ==================== EXPENSES RENDERING ====================
     function renderExpenses() {
-      const rate = parseFloat(appData.settings.exchangeRate) || 0.215;
-      const limit = parseFloat(appData.settings.budgetLimit) || 80000;
+      const rateInput = document.getElementById('exchangeRateInput');
+      const limitInput = document.getElementById('budgetLimitInput');
+      if (rateInput) rateInput.value = appData.settings.exchangeRate;
+      if (limitInput) limitInput.value = appData.settings.budgetLimit;
 
-      let totalTWD = 0;
-      let totalJPY = 0;
-      let totalAllInTWD = 0;
-
+      // Calculate category totals in TWD
+      const catTotals = {};
+      let grandTotal = 0;
       appData.expenses.forEach(ex => {
-        const amt = parseFloat(ex.amount) || 0;
-        if (ex.currency === 'TWD') {
-          totalTWD += amt;
-          totalAllInTWD += amt;
-        } else {
-          totalJPY += amt;
-          totalAllInTWD += amt * rate;
-        }
+        const twd = toTWD(ex.amount, ex.currency);
+        catTotals[ex.category] = (catTotals[ex.category] || 0) + twd;
+        grandTotal += twd;
       });
 
-      const roundedAllTWD = Math.round(totalAllInTWD);
-      const remainingTWD = limit - roundedAllTWD;
-      const pct = limit > 0 ? Math.min(100, Math.round((roundedAllTWD / limit) * 100)) : 0;
+      const donutTotalEl = document.getElementById('donutTotalText');
+      if (donutTotalEl) donutTotalEl.textContent = `NT$ ${grandTotal.toLocaleString()}`;
 
-      document.getElementById('expTotalAllTWD').textContent = `NT$ ${roundedAllTWD.toLocaleString()}`;
-      document.getElementById('expTotalJPY').textContent = `¥ ${Math.round(totalJPY).toLocaleString()}`;
-      document.getElementById('expTotalTWD').textContent = `NT$ ${Math.round(totalTWD).toLocaleString()}`;
+      // Render SVG Donut Chart
+      const donutSvg = document.getElementById('expenseDonut');
+      if (donutSvg) {
+        const cx = 90, cy = 90, r = 62;
+        const circumference = 2 * Math.PI * r;
+        let offset = 0;
+        const entries = Object.entries(catTotals).sort((a, b) => b[1] - a[1]);
 
-      const remEl = document.getElementById('expRemaining');
-      remEl.textContent = `${remainingTWD < 0 ? '-' : ''}NT$ ${Math.abs(remainingTWD).toLocaleString()}`;
-      remEl.className = `font-display font-bold text-lg mt-0.5 ${remainingTWD < 0 ? 'text-rose-600' : 'text-emerald-700'}`;
-
-      document.getElementById('expProgressPct').textContent = `${pct}%`;
-      const bar = document.getElementById('expProgressBar');
-      bar.style.width = `${pct}%`;
-      bar.className = `h-full rounded-full transition-all duration-300 ${pct > 100 ? 'bg-rose-500' : pct > 85 ? 'bg-warmwood' : 'bg-pine'}`;
-
-      const listEl = document.getElementById('expenseList');
-      if (!listEl) return;
-
-      if (appData.expenses.length === 0) {
-        listEl.innerHTML = `<div class="p-8 text-center text-sm text-slate-400">尚無支出紀錄，點擊上方「＋ 記一筆支出」開始記帳</div>`;
-        return;
+        if (grandTotal === 0 || entries.length === 0) {
+          donutSvg.innerHTML = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#E2E8F0" stroke-width="22" />`;
+        } else {
+          const segments = entries.map(([cat, val]) => {
+            const pct = val / grandTotal;
+            const dash = pct * circumference;
+            const color = EXPENSE_COLORS[cat] || '#9AA5B1';
+            const seg = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="22" stroke-dasharray="${dash} ${circumference - dash}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})" />`;
+            offset += dash;
+            return seg;
+          }).join('');
+          donutSvg.innerHTML = segments;
+        }
       }
-
-      const hasSortable = typeof Sortable !== 'undefined';
-
-      listEl.innerHTML = appData.expenses.map((ex, idx) => {
-        const amt = parseFloat(ex.amount) || 0;
-        const twdEquiv = ex.currency === 'JPY' ? Math.round(amt * rate) : Math.round(amt);
-        return `
-          <div data-expense-id="${ex.id}" class="p-3.5 sm:px-5 flex items-center justify-between gap-2.5 hover:bg-white/70 transition bg-white/40">
-            <div class="flex items-center gap-2.5 min-w-0">
-              ${hasSortable ? `
-                <div class="expense-drag-handle cursor-grab active:cursor-grabbing px-1 text-slate-300 hover:text-pine text-base leading-none shrink-0 select-none" title="按住拖曳調整順序">⋮⋮</div>
-              ` : `
-                <div class="flex flex-col gap-0.5 shrink-0">
-                  <button type="button" onclick="moveExpenseStep('${ex.id}', -1)" ${idx === 0 ? 'disabled' : ''} class="text-[10px] px-1 rounded bg-snow border border-slate-200 text-slate-500 disabled:opacity-30">↑</button>
-                  <button type="button" onclick="moveExpenseStep('${ex.id}', 1)" ${idx === appData.expenses.length - 1 ? 'disabled' : ''} class="text-[10px] px-1 rounded bg-snow border border-slate-200 text-slate-500 disabled:opacity-30">↓</button>
-                </div>
-              `}
-              <div class="min-w-0">
-                <div class="flex items-center gap-1.5 flex-wrap">
-                  <span class="px-2 py-0.5 rounded-md bg-ice/80 text-pine text-[11px] font-bold">${escapeHtml(ex.category)}</span>
-                  ${ex.date ? `<span class="text-[11px] font-bold text-slate-500">${escapeHtml(ex.date)}</span>` : ''}
-                  ${ex.isEstimate ? `<span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-bold">預估</span>` : `<span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">實際</span>`}
-                </div>
-                <div class="font-bold text-sm text-slateink mt-1 truncate">${escapeHtml(ex.title)}</div>
-              </div>
-            </div>
-
-            <div class="flex items-center gap-2 shrink-0">
-              <div class="text-right">
-                <div class="font-display font-bold text-sm text-slateink">
-                  ${ex.currency === 'JPY' ? '¥' : 'NT$'} ${amt.toLocaleString()}
-                </div>
-                ${ex.currency === 'JPY' ? `<div class="text-[11px] text-slate-400">≈ NT$ ${twdEquiv.toLocaleString()}</div>` : ''}
-              </div>
-              <button onclick="openExpenseModal('${ex.id}')" class="px-2 py-1 rounded-lg bg-white hover:bg-ice/60 border border-slate-200 text-xs text-slate-600">編輯</button>
-              <button onclick="confirmDelete('expenses', '${ex.id}', '${escapeHtml(ex.title)}')" class="px-2 py-1 rounded-lg bg-white hover:bg-rose-50 border border-slate-200 text-xs text-rose-600">🗑️</button>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      initExpenseSortable();
-    }
 
       // Render Category Breakdown Bars
       const barsEl = document.getElementById('expenseCategoryBars');
@@ -2083,23 +2079,35 @@ function sortExpensesByDate() {
         }
       }
 
-      // Render Expense List
+      // Render Expense List (with drag-and-drop handle)
       const listEl = document.getElementById('expenseList');
       const catFilter = document.getElementById('expenseCategoryFilter')?.value || 'ALL';
       if (!listEl) return;
 
+      const isFiltering = catFilter !== 'ALL';
+      const hasSortable = typeof Sortable !== 'undefined';
       const filtered = appData.expenses.filter(ex => catFilter === 'ALL' || ex.category === catFilter);
+
       if (filtered.length === 0) {
         listEl.innerHTML = `<div class="text-xs text-slate-400 text-center py-6">此分類目前沒有支出紀錄</div>`;
+        initExpenseSortable(true);
         return;
       }
 
-      listEl.innerHTML = filtered.map(ex => {
+      listEl.innerHTML = filtered.map((ex, idx) => {
         const twd = toTWD(ex.amount, ex.currency);
         const color = EXPENSE_COLORS[ex.category] || '#9AA5B1';
         return `
-          <div class="bg-white/90 rounded-xl p-3 border border-slate-200/75 flex items-center justify-between gap-3">
-            <div class="flex items-center gap-3 min-w-0">
+          <div data-expense-id="${ex.id}" class="expense-card bg-white/90 rounded-xl p-3 border border-slate-200/75 flex items-center justify-between gap-2.5 transition">
+            <div class="flex items-center gap-2.5 min-w-0">
+              ${!isFiltering ? (hasSortable ? `
+                <div class="expense-drag-handle drag-handle px-1 text-slate-300 hover:text-pine text-base leading-none shrink-0" title="按住拖曳調整順序">⋮⋮</div>
+              ` : `
+                <div class="flex flex-col gap-0.5 shrink-0">
+                  <button type="button" onclick="moveExpenseStep('${ex.id}', -1)" ${idx === 0 ? 'disabled' : ''} class="text-[10px] px-1 rounded bg-snow border border-slate-200 text-slate-500 disabled:opacity-30">↑</button>
+                  <button type="button" onclick="moveExpenseStep('${ex.id}', 1)" ${idx === filtered.length - 1 ? 'disabled' : ''} class="text-[10px] px-1 rounded bg-snow border border-slate-200 text-slate-500 disabled:opacity-30">↓</button>
+                </div>
+              `) : ''}
               <span class="w-2.5 h-9 rounded-full shrink-0" style="background:${color}"></span>
               <div class="min-w-0">
                 <div class="flex items-center gap-1.5 flex-wrap">
@@ -2122,6 +2130,8 @@ function sortExpensesByDate() {
           </div>
         `;
       }).join('');
+
+      initExpenseSortable(isFiltering);
     }
 
     // ==================== TRAVEL PHRASEBOOK ====================
@@ -2355,7 +2365,7 @@ function sortExpensesByDate() {
     }
 
     function openDayMetaModal(dayNum) {
-      const meta = appData.daysMeta.find(d => d.day === dayNum);
+      const meta = appData.daysMeta.find(d => Number(d.day) === Number(dayNum));
       if (!meta) return;
       document.getElementById('dayMetaModalTitle').textContent = `編輯 DAY ${dayNum} 大標與概述`;
       document.getElementById('dayMetaLabel').value = meta.label || '';
@@ -2365,7 +2375,7 @@ function sortExpensesByDate() {
       document.getElementById('dayMetaTheme').value = meta.theme;
       openModal('dayMetaModal');
     }
-    
+
     function saveDayMeta(e) {
       e.preventDefault();
       const dayNum = parseInt(document.getElementById('editDayMetaNum').value, 10);
@@ -2385,16 +2395,13 @@ function sortExpensesByDate() {
             appData.daysMeta[i].isoDate = nextIso;
             appData.daysMeta[i].date = formatShortCalDate(nextIso);
           }
-          // 同步更新頂部標題列的出發與回程日期
           const lastIso = appData.daysMeta[appData.daysMeta.length - 1].isoDate;
           if (appData.settings) {
             appData.settings.tripStartDate = iso;
             appData.settings.tripEndDate = lastIso;
-            if (typeof formatFullCalDate === 'function') {
-              appData.settings.tripDateRange = `${formatFullCalDate(iso)} – ${formatShortCalDate(lastIso)}`;
-            }
+            appData.settings.tripDateRange = `${formatFullCalDate(iso)} – ${formatShortCalDate(lastIso)}`;
           }
-          if (typeof renderHeader === 'function') renderHeader();
+          renderHeader();
         }
       }
       closeModal('dayMetaModal');
@@ -2426,6 +2433,7 @@ function sortExpensesByDate() {
       }
       openModal('itemModal');
     }
+
     function syncItineraryToLinkedRecords(item) {
       const dayMeta = appData.daysMeta.find(d => Number(d.day) === Number(item.day));
       const iso = dayMeta?.isoDate || parseLegacyDateToISO(dayMeta?.date, '2027-01-11');
@@ -2457,7 +2465,6 @@ function sortExpensesByDate() {
           });
         }
       } else if (item.linkedTransportId) {
-        // 如果把原本的交通改成其他分類，就取消連動並移除舊交通卡
         appData.transports = appData.transports.filter(t => t.id !== item.linkedTransportId);
         delete item.linkedTransportId;
       }
@@ -2515,7 +2522,6 @@ function sortExpensesByDate() {
         linkedHotelId: existing?.linkedHotelId || null
       };
 
-      // 執行連動同步！
       syncItineraryToLinkedRecords(payload);
 
       if (editId) {
@@ -2533,8 +2539,7 @@ function sortExpensesByDate() {
       renderHotels();
     }
 
-
-      function openTransportModal(editId = null) {
+    function openTransportModal(editId = null) {
       document.getElementById('transportForm').reset();
       document.getElementById('editTransportId').value = '';
       if (editId) {
@@ -2543,7 +2548,6 @@ function sortExpensesByDate() {
         document.getElementById('transportModalTitle').textContent = '編輯交通資訊';
         document.getElementById('editTransportId').value = tr.id;
         document.getElementById('trType').value = tr.type;
-        // 👈 編輯舊資料時，自動把 "1/14 (四)" 轉成日曆格式顯示
         document.getElementById('trDate').value = tr.isoDate || parseLegacyDateToISO(tr.date, '2027-01-11');
         document.getElementById('trRoute').value = tr.route;
         document.getElementById('trTime').value = tr.time || '';
@@ -2551,8 +2555,7 @@ function sortExpensesByDate() {
         document.getElementById('trNotes').value = tr.notes || '';
       } else {
         document.getElementById('transportModalTitle').textContent = '新增交通 / 航班';
-        // 👈 新增交通時，日曆預設停在旅程第一天，不用從今年一路翻月曆
-        document.getElementById('trDate').value = '2027-01-11';
+        document.getElementById('trDate').value = appData.settings.tripStartDate || '2027-01-11';
       }
       openModal('transportModal');
     }
@@ -2560,12 +2563,12 @@ function sortExpensesByDate() {
     function saveTransport(e) {
       e.preventDefault();
       const editId = document.getElementById('editTransportId').value;
-      const iso = document.getElementById('trDate').value; // 👈 讀取日曆值 (例如 2027-01-14)
+      const iso = document.getElementById('trDate').value;
       const payload = {
         id: editId || 't_' + Date.now(),
         type: document.getElementById('trType').value,
-        isoDate: iso,                                      // 👈 存一份日曆原值
-        date: formatShortCalDate(iso),                     // 👈 轉成 "1/14 (四)" 顯示在卡片上
+        isoDate: iso,
+        date: formatShortCalDate(iso),
         route: document.getElementById('trRoute').value.trim(),
         time: document.getElementById('trTime').value.trim(),
         status: document.getElementById('trStatus').value,
@@ -2591,7 +2594,6 @@ function sortExpensesByDate() {
         document.getElementById('hotelModalTitle').textContent = '編輯飯店資訊';
         document.getElementById('editHotelId').value = ht.id;
         document.getElementById('htCity').value = ht.city;
-        // 👈 把原本的入住日轉成日曆格式；若沒有退房日就自動預設往後加 1 天
         const ci = ht.checkIn || parseLegacyDateToISO(ht.dates, '2027-01-11');
         document.getElementById('htCheckIn').value = ci;
         document.getElementById('htCheckOut').value = ht.checkOut || addDaysISO(ci, 1);
@@ -2602,9 +2604,9 @@ function sortExpensesByDate() {
         document.getElementById('htNotes').value = ht.notes || '';
       } else {
         document.getElementById('hotelModalTitle').textContent = '新增飯店資訊';
-        // 👈 新增飯店時，預設入住 1/11、退房 1/12
-        document.getElementById('htCheckIn').value = '2027-01-11';
-        document.getElementById('htCheckOut').value = '2027-01-12';
+        const start = appData.settings.tripStartDate || '2027-01-11';
+        document.getElementById('htCheckIn').value = start;
+        document.getElementById('htCheckOut').value = addDaysISO(start, 1);
       }
       openModal('hotelModal');
     }
@@ -2612,14 +2614,14 @@ function sortExpensesByDate() {
     function saveHotel(e) {
       e.preventDefault();
       const editId = document.getElementById('editHotelId').value;
-      const checkIn = document.getElementById('htCheckIn').value;   // 👈 讀取入住日曆
-      const checkOut = document.getElementById('htCheckOut').value; // 👈 讀取退房日曆
+      const checkIn = document.getElementById('htCheckIn').value;
+      const checkOut = document.getElementById('htCheckOut').value;
       const payload = {
         id: editId || 'h_' + Date.now(),
         city: document.getElementById('htCity').value.trim(),
-        checkIn: checkIn,                                           // 👈 存入住日
-        checkOut: checkOut,                                         // 👈 存退房日
-        dates: formatHotelDateRange(checkIn, checkOut),             // 👈 自動組成 "1/14 (四) - 1/17 (日)（3 晚）"
+        checkIn: checkIn,
+        checkOut: checkOut,
+        dates: formatHotelDateRange(checkIn, checkOut),
         name: document.getElementById('htName').value.trim(),
         price: parseFloat(document.getElementById('htPrice').value) || 0,
         status: document.getElementById('htStatus').value,
@@ -2647,14 +2649,13 @@ function sortExpensesByDate() {
         document.getElementById('editExpenseId').value = ex.id;
         document.getElementById('exTitle').value = ex.title;
         document.getElementById('exCategory').value = ex.category;
-        // 👈 讀取已存的日曆值（如果是「行前」等文字就先留空不強迫）
         document.getElementById('exDate').value = ex.isoDate || parseLegacyDateToISO(ex.date, '');
         document.getElementById('exAmount').value = ex.amount;
         document.getElementById('exCurrency').value = ex.currency;
         document.getElementById('exIsEstimate').checked = !!ex.isEstimate;
       } else {
         document.getElementById('expenseModalTitle').textContent = '記一筆支出';
-        document.getElementById('exDate').value = '2027-01-11';
+        document.getElementById('exDate').value = appData.settings.tripStartDate || '2027-01-11';
       }
       openModal('expenseModal');
     }
@@ -2662,13 +2663,13 @@ function sortExpensesByDate() {
     function saveExpense(e) {
       e.preventDefault();
       const editId = document.getElementById('editExpenseId').value;
-      const iso = document.getElementById('exDate').value; // 👈 讀取日曆值（可留空）
+      const iso = document.getElementById('exDate').value;
       const payload = {
         id: editId || 'e_' + Date.now(),
         title: document.getElementById('exTitle').value.trim(),
         category: document.getElementById('exCategory').value,
         isoDate: iso,
-        date: iso ? formatShortCalDate(iso) : '',          // 👈 有選日期就轉成 "1/14 (四)"
+        date: iso ? formatShortCalDate(iso) : '',
         amount: parseFloat(document.getElementById('exAmount').value) || 0,
         currency: document.getElementById('exCurrency').value,
         isEstimate: document.getElementById('exIsEstimate').checked
@@ -2685,7 +2686,7 @@ function sortExpensesByDate() {
       renderExpenses();
     }
 
-// Custom Confirmation Dialog for Deletions & Reset
+    // Custom Confirmation Dialog for Deletions & Reset
     function confirmDelete(collection, id, label) {
       document.getElementById('confirmTitle').textContent = '確定要刪除嗎？';
       document.getElementById('confirmMessage').textContent = `即將移除「${label}」，此動作無法復原。`;
