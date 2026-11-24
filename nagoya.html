@@ -2581,8 +2581,13 @@
       renderExpenses();
     }
 
-    // Custom Confirmation Dialog for Deletions & Reset
-            if (collection === 'itinerary') {
+// Custom Confirmation Dialog for Deletions & Reset
+    function confirmDelete(collection, id, label) {
+      document.getElementById('confirmTitle').textContent = '確定要刪除嗎？';
+      document.getElementById('confirmMessage').textContent = `即將移除「${label}」，此動作無法復原。`;
+      const btn = document.getElementById('confirmActionBtn');
+      btn.onclick = () => {
+        if (collection === 'itinerary') {
           const target = appData.itinerary.find(item => item.id === id);
           if (target?.linkedTransportId) {
             appData.transports = appData.transports.filter(t => t.id !== target.linkedTransportId);
@@ -2590,11 +2595,7 @@
           if (target?.linkedHotelId) {
             appData.hotels = appData.hotels.filter(h => h.id !== target.linkedHotelId);
           }
-    function confirmDelete(collection, id, label) {
-      document.getElementById('confirmTitle').textContent = '確定要刪除嗎？';
-      document.getElementById('confirmMessage').textContent = `即將移除「${label}」，此動作無法復原。`;
-      const btn = document.getElementById('confirmActionBtn');
-      btn.onclick = () => {
+        }
         appData[collection] = appData[collection].filter(item => item.id !== id);
         closeModal('confirmModal');
         persistData('已刪除項目');
@@ -2748,6 +2749,3 @@
   </script>
 </body>
 </html>
-
-<script async src="/.netlify/scripts/ar" data-netlify-deploy-id="6b03a6bcbc14ac6564d9405b" data-netlify-site-id="2eb14c52-3e9b-4702-ac6f-de6a4021fe5c" data-agent-runner-id="6b03a630313481bd5e1ba46e"></script>
-<script async src="/.netlify/scripts/hud?variant=owner-private" data-nf-variant="owner-private" data-netlify-site-id="2eb14c52-3e9b-4702-ac6f-de6a4021fe5c" data-app-host="app.netlify.com"></script>
