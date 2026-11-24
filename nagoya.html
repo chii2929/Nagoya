@@ -2323,11 +2323,82 @@
       }
       openModal('itemModal');
     }
+    function syncItineraryToLinkedRecords(item) {
+      const dayMeta = appData.daysMeta.find(d => Number(d.day) === Number(item.day));
+      const iso = dayMeta?.isoDate || parseLegacyDateToISO(dayMeta?.date, '2027-01-11');
+      const shortDate = dayMeta?.date || formatShortCalDate(iso);
+
+      // 1. 若分類是「交通」→ 同步到交通預約分頁
+      if (item.category === '交通') {
+        const existingTr = item.linkedTransportId
+          ? appData.transports.find(t => t.id === item.linkedTransportId)
+          : null;
+        if (existingTr) {
+          existingTr.isoDate = iso;
+          existingTr.date = shortDate;
+          existingTr.route = item.title;
+          existingTr.status = item.status === '已預約' ? '已預約' : (item.status === '不需預約' ? '現場購票' : '尚未預約');
+          if (item.notes) existingTr.notes = item.notes;
+        } else {
+          const newTrId = 't_' + Date.now();
+          item.linkedTransportId = newTrId;
+          appData.transports.push({
+            id: newTrId,
+            type: /飛機|航班|機場/.test(item.title) ? '航班' : (/新幹線|JR/.test(item.title) ? 'JR/新幹線' : '預約巴士'),
+            isoDate: iso,
+            date: shortDate,
+            route: item.title,
+            time: item.timeSlot || '',
+            status: item.status === '已預約' ? '已預約' : '尚未預約',
+            notes: item.notes || ''
+          });
+        }
+      } else if (item.linkedTransportId) {
+        // 如果把原本的交通改成其他分類，就取消連動並移除舊交通卡
+        appData.transports = appData.transports.filter(t => t.id !== item.linkedTransportId);
+        delete item.linkedTransportId;
+      }
+
+      // 2. 若分類是「住宿」→ 同步到飯店整理分頁
+      if (item.category === '住宿') {
+        const nextIso = addDaysISO(iso, 1);
+        const existingHt = item.linkedHotelId
+          ? appData.hotels.find(h => h.id === item.linkedHotelId)
+          : null;
+        if (existingHt) {
+          existingHt.city = dayMeta?.city || existingHt.city;
+          existingHt.name = item.title;
+          existingHt.status = item.status === '已預約' ? '已預約' : '尚未預約';
+          if (item.location) existingHt.address = item.location;
+          if (item.notes) existingHt.notes = item.notes;
+        } else {
+          const newHtId = 'h_' + Date.now();
+          item.linkedHotelId = newHtId;
+          appData.hotels.push({
+            id: newHtId,
+            city: dayMeta?.city || '住宿城市',
+            checkIn: iso,
+            checkOut: nextIso,
+            dates: formatHotelDateRange(iso, nextIso),
+            name: item.title,
+            price: 0,
+            status: item.status === '已預約' ? '已預約' : '尚未預約',
+            address: item.location || '',
+            notes: item.notes || ''
+          });
+        }
+      } else if (item.linkedHotelId) {
+        appData.hotels = appData.hotels.filter(h => h.id !== item.linkedHotelId);
+        delete item.linkedHotelId;
+      }
+    }
 
     function saveItineraryItem(e) {
       e.preventDefault();
       const editId = document.getElementById('editItemId').value;
       const dayVal = parseInt(document.getElementById('itemDay').value, 10);
+      const existing = editId ? appData.itinerary.find(i => i.id === editId) : null;
+
       const payload = {
         id: editId || 'i_' + Date.now(),
         day: dayVal,
@@ -2336,23 +2407,31 @@
         category: document.getElementById('itemCategory').value,
         status: document.getElementById('itemStatus').value,
         location: document.getElementById('itemLocation').value.trim(),
-        notes: document.getElementById('itemNotes').value.trim()
+        notes: document.getElementById('itemNotes').value.trim(),
+        linkedTransportId: existing?.linkedTransportId || null,
+        linkedHotelId: existing?.linkedHotelId || null
       };
+
+      // 執行連動同步！
+      syncItineraryToLinkedRecords(payload);
 
       if (editId) {
         const idx = appData.itinerary.findIndex(i => i.id === editId);
         if (idx > -1) appData.itinerary[idx] = payload;
       } else {
         appData.itinerary.push(payload);
-        if (!appData.expandedDays.includes(dayVal)) appData.expandedDays.push(dayVal);
+        if (!appData.expandedDays.some(d => Number(d) === dayVal)) appData.expandedDays.push(dayVal);
       }
 
       closeModal('itemModal');
-      persistData(editId ? '已更新行程項目' : '已新增行程項目');
+      persistData(editId ? '已更新行程並同步連動' : '已新增行程並同步連動');
       renderItinerary();
+      renderTransports();
+      renderHotels();
     }
 
-    function openTransportModal(editId = null) {
+
+      function openTransportModal(editId = null) {
       document.getElementById('transportForm').reset();
       document.getElementById('editTransportId').value = '';
       if (editId) {
@@ -2361,6 +2440,7 @@
         document.getElementById('transportModalTitle').textContent = '編輯交通資訊';
         document.getElementById('editTransportId').value = tr.id;
         document.getElementById('trType').value = tr.type;
+        // 👈 編輯舊資料時，自動把 "1/14 (四)" 轉成日曆格式顯示
         document.getElementById('trDate').value = tr.isoDate || parseLegacyDateToISO(tr.date, '2027-01-11');
         document.getElementById('trRoute').value = tr.route;
         document.getElementById('trTime').value = tr.time || '';
@@ -2368,6 +2448,8 @@
         document.getElementById('trNotes').value = tr.notes || '';
       } else {
         document.getElementById('transportModalTitle').textContent = '新增交通 / 航班';
+        // 👈 新增交通時，日曆預設停在旅程第一天，不用從今年一路翻月曆
+        document.getElementById('trDate').value = '2027-01-11';
       }
       openModal('transportModal');
     }
@@ -2375,15 +2457,15 @@
     function saveTransport(e) {
       e.preventDefault();
       const editId = document.getElementById('editTransportId').value;
+      const iso = document.getElementById('trDate').value; // 👈 讀取日曆值 (例如 2027-01-14)
       const payload = {
         id: editId || 't_' + Date.now(),
         type: document.getElementById('trType').value,
-        date: document.getElementById('trDate').value.trim(),
+        isoDate: iso,                                      // 👈 存一份日曆原值
+        date: formatShortCalDate(iso),                     // 👈 轉成 "1/14 (四)" 顯示在卡片上
         route: document.getElementById('trRoute').value.trim(),
         time: document.getElementById('trTime').value.trim(),
         status: document.getElementById('trStatus').value,
-        isoDate: iso, date: formatShortCalDate(iso),
-        const iso = document.getElementById('trDate').value;
         notes: document.getElementById('trNotes').value.trim()
       };
       if (editId) {
@@ -2406,7 +2488,10 @@
         document.getElementById('hotelModalTitle').textContent = '編輯飯店資訊';
         document.getElementById('editHotelId').value = ht.id;
         document.getElementById('htCity').value = ht.city;
-        document.getElementById('htDates').value = ht.dates;
+        // 👈 把原本的入住日轉成日曆格式；若沒有退房日就自動預設往後加 1 天
+        const ci = ht.checkIn || parseLegacyDateToISO(ht.dates, '2027-01-11');
+        document.getElementById('htCheckIn').value = ci;
+        document.getElementById('htCheckOut').value = ht.checkOut || addDaysISO(ci, 1);
         document.getElementById('htName').value = ht.name;
         document.getElementById('htPrice').value = ht.price || '';
         document.getElementById('htStatus').value = ht.status;
@@ -2414,6 +2499,9 @@
         document.getElementById('htNotes').value = ht.notes || '';
       } else {
         document.getElementById('hotelModalTitle').textContent = '新增飯店資訊';
+        // 👈 新增飯店時，預設入住 1/11、退房 1/12
+        document.getElementById('htCheckIn').value = '2027-01-11';
+        document.getElementById('htCheckOut').value = '2027-01-12';
       }
       openModal('hotelModal');
     }
@@ -2421,10 +2509,14 @@
     function saveHotel(e) {
       e.preventDefault();
       const editId = document.getElementById('editHotelId').value;
+      const checkIn = document.getElementById('htCheckIn').value;   // 👈 讀取入住日曆
+      const checkOut = document.getElementById('htCheckOut').value; // 👈 讀取退房日曆
       const payload = {
         id: editId || 'h_' + Date.now(),
         city: document.getElementById('htCity').value.trim(),
-        dates: document.getElementById('htDates').value.trim(),
+        checkIn: checkIn,                                           // 👈 存入住日
+        checkOut: checkOut,                                         // 👈 存退房日
+        dates: formatHotelDateRange(checkIn, checkOut),             // 👈 自動組成 "1/14 (四) - 1/17 (日)（3 晚）"
         name: document.getElementById('htName').value.trim(),
         price: parseFloat(document.getElementById('htPrice').value) || 0,
         status: document.getElementById('htStatus').value,
@@ -2452,12 +2544,14 @@
         document.getElementById('editExpenseId').value = ex.id;
         document.getElementById('exTitle').value = ex.title;
         document.getElementById('exCategory').value = ex.category;
-        document.getElementById('exDate').value = ex.date || '';
+        // 👈 讀取已存的日曆值（如果是「行前」等文字就先留空不強迫）
+        document.getElementById('exDate').value = ex.isoDate || parseLegacyDateToISO(ex.date, '');
         document.getElementById('exAmount').value = ex.amount;
         document.getElementById('exCurrency').value = ex.currency;
         document.getElementById('exIsEstimate').checked = !!ex.isEstimate;
       } else {
         document.getElementById('expenseModalTitle').textContent = '記一筆支出';
+        document.getElementById('exDate').value = '2027-01-11';
       }
       openModal('expenseModal');
     }
@@ -2465,11 +2559,13 @@
     function saveExpense(e) {
       e.preventDefault();
       const editId = document.getElementById('editExpenseId').value;
+      const iso = document.getElementById('exDate').value; // 👈 讀取日曆值（可留空）
       const payload = {
         id: editId || 'e_' + Date.now(),
         title: document.getElementById('exTitle').value.trim(),
         category: document.getElementById('exCategory').value,
-        date: document.getElementById('exDate').value.trim(),
+        isoDate: iso,
+        date: iso ? formatShortCalDate(iso) : '',          // 👈 有選日期就轉成 "1/14 (四)"
         amount: parseFloat(document.getElementById('exAmount').value) || 0,
         currency: document.getElementById('exCurrency').value,
         isEstimate: document.getElementById('exIsEstimate').checked
@@ -2486,6 +2582,14 @@
     }
 
     // Custom Confirmation Dialog for Deletions & Reset
+            if (collection === 'itinerary') {
+          const target = appData.itinerary.find(item => item.id === id);
+          if (target?.linkedTransportId) {
+            appData.transports = appData.transports.filter(t => t.id !== target.linkedTransportId);
+          }
+          if (target?.linkedHotelId) {
+            appData.hotels = appData.hotels.filter(h => h.id !== target.linkedHotelId);
+          }
     function confirmDelete(collection, id, label) {
       document.getElementById('confirmTitle').textContent = '確定要刪除嗎？';
       document.getElementById('confirmMessage').textContent = `即將移除「${label}」，此動作無法復原。`;
@@ -2494,7 +2598,7 @@
         appData[collection] = appData[collection].filter(item => item.id !== id);
         closeModal('confirmModal');
         persistData('已刪除項目');
-        if (collection === 'itinerary') renderItinerary();
+        if (collection === 'itinerary') { renderItinerary(); renderTransports(); renderHotels(); }
         if (collection === 'transports') renderTransports();
         if (collection === 'reminders') renderReminders();
         if (collection === 'hotels') renderHotels();
