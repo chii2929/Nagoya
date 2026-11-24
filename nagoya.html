@@ -1426,18 +1426,38 @@
     }
 
     function toggleDay(dayNum) {
-      const idx = appData.expandedDays.indexOf(dayNum);
+      const num = Number(dayNum);
+      // 如果當時有開著篩選或搜尋，點收合時一併清空篩選避免被強制鎖住展開
+      const searchEl = document.getElementById('searchInput');
+      const statusEl = document.getElementById('statusFilterSelect');
+      const hadFilter = currentCategoryFilter !== '全部'
+        || (statusEl && statusEl.value !== 'ALL')
+        || (searchEl && searchEl.value.trim().length > 0);
+      if (hadFilter) {
+        currentCategoryFilter = '全部';
+        if (searchEl) searchEl.value = '';
+        if (statusEl) statusEl.value = 'ALL';
+        renderCategoryPills();
+      }
+
+      const idx = appData.expandedDays.findIndex(d => Number(d) === num);
       if (idx > -1) {
         appData.expandedDays.splice(idx, 1);
       } else {
-        appData.expandedDays.push(dayNum);
+        appData.expandedDays.push(num);
       }
       persistData();
       renderItinerary();
     }
 
     function toggleAllDays(expand) {
-      appData.expandedDays = expand ? appData.daysMeta.map(d => d.day) : [];
+      const searchEl = document.getElementById('searchInput');
+      const statusEl = document.getElementById('statusFilterSelect');
+      currentCategoryFilter = '全部';
+      if (searchEl) searchEl.value = '';
+      if (statusEl) statusEl.value = 'ALL';
+      renderCategoryPills();
+      appData.expandedDays = expand ? appData.daysMeta.map(d => Number(d.day)) : [];
       persistData();
       renderItinerary();
     }
