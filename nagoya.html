@@ -2361,7 +2361,7 @@
         document.getElementById('transportModalTitle').textContent = '編輯交通資訊';
         document.getElementById('editTransportId').value = tr.id;
         document.getElementById('trType').value = tr.type;
-        document.getElementById('trDate').value = tr.date;
+        document.getElementById('trDate').value = tr.isoDate || parseLegacyDateToISO(tr.date, '2027-01-11');
         document.getElementById('trRoute').value = tr.route;
         document.getElementById('trTime').value = tr.time || '';
         document.getElementById('trStatus').value = tr.status;
@@ -2382,6 +2382,8 @@
         route: document.getElementById('trRoute').value.trim(),
         time: document.getElementById('trTime').value.trim(),
         status: document.getElementById('trStatus').value,
+        isoDate: iso, date: formatShortCalDate(iso),
+        const iso = document.getElementById('trDate').value;
         notes: document.getElementById('trNotes').value.trim()
       };
       if (editId) {
