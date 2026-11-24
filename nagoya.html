@@ -1922,54 +1922,138 @@
       }).join('');
     }
 
-    // ==================== EXPENSES & BUDGET RENDERING ====================
-    function updateSettings() {
-      const rate = parseFloat(document.getElementById('exchangeRateInput').value);
-      const limit = parseFloat(document.getElementById('budgetLimitInput').value);
-      if (!isNaN(rate) && rate > 0) appData.settings.exchangeRate = rate;
-      if (!isNaN(limit) && limit > 0) appData.settings.budgetLimit = limit;
-      persistData('已更新匯率與預算設定');
+function sortExpensesByDate() {
+      appData.expenses.sort((a, b) => {
+        const da = a.isoDate || parseLegacyDateToISO(a.date, '');
+        const db = b.isoDate || parseLegacyDateToISO(b.date, '');
+        if (!da && !db) return 0;
+        if (!da) return -1;
+        if (!db) return 1;
+        return da.localeCompare(db);
+      });
+    }
+
+    function moveExpenseStep(id, direction) {
+      const idx = appData.expenses.findIndex(e => e.id === id);
+      const targetIdx = idx + direction;
+      if (idx < 0 || targetIdx < 0 || targetIdx >= appData.expenses.length) return;
+      const [moved] = appData.expenses.splice(idx, 1);
+      appData.expenses.splice(targetIdx, 0, moved);
+      persistData('已調整支出順序');
       renderExpenses();
     }
 
-    function renderExpenses() {
-      const rateInput = document.getElementById('exchangeRateInput');
-      const limitInput = document.getElementById('budgetLimitInput');
-      if (rateInput) rateInput.value = appData.settings.exchangeRate;
-      if (limitInput) limitInput.value = appData.settings.budgetLimit;
+    function initExpenseSortable() {
+      if (typeof Sortable === 'undefined') return;
+      const listEl = document.getElementById('expenseList');
+      if (!listEl) return;
+      if (listEl._sortableInstance) {
+        listEl._sortableInstance.destroy();
+      }
+      listEl._sortableInstance = new Sortable(listEl, {
+        handle: '.expense-drag-handle',
+        animation: 180,
+        ghostClass: 'sortable-ghost',
+        onEnd: () => {
+          const orderedIds = Array.from(listEl.querySelectorAll('[data-expense-id]')).map(el => el.dataset.expenseId);
+          const map = new Map(appData.expenses.map(ex => [ex.id, ex]));
+          const reordered = orderedIds.map(id => map.get(id)).filter(Boolean);
+          appData.expenses.forEach(ex => {
+            if (!orderedIds.includes(ex.id)) reordered.push(ex);
+          });
+          appData.expenses = reordered;
+          persistData('已調整支出順序');
+        }
+      });
+    }
 
-      const catTotals = {};
-      let grandTotal = 0;
+    // ==================== EXPENSES RENDERING ====================
+    function renderExpenses() {
+      const rate = parseFloat(appData.settings.exchangeRate) || 0.215;
+      const limit = parseFloat(appData.settings.budgetLimit) || 80000;
+
+      let totalTWD = 0;
+      let totalJPY = 0;
+      let totalAllInTWD = 0;
+
       appData.expenses.forEach(ex => {
-        const twd = toTWD(ex.amount, ex.currency);
-        grandTotal += twd;
-        catTotals[ex.category] = (catTotals[ex.category] || 0) + twd;
+        const amt = parseFloat(ex.amount) || 0;
+        if (ex.currency === 'TWD') {
+          totalTWD += amt;
+          totalAllInTWD += amt;
+        } else {
+          totalJPY += amt;
+          totalAllInTWD += amt * rate;
+        }
       });
 
-      const donutTotalEl = document.getElementById('donutTotalText');
-      if (donutTotalEl) donutTotalEl.textContent = `NT$ ${grandTotal.toLocaleString()}`;
+      const roundedAllTWD = Math.round(totalAllInTWD);
+      const remainingTWD = limit - roundedAllTWD;
+      const pct = limit > 0 ? Math.min(100, Math.round((roundedAllTWD / limit) * 100)) : 0;
 
-      // Render SVG Donut Chart
-      const svg = document.getElementById('expenseDonut');
-      if (svg) {
-        const cx = 90, cy = 90, r = 64, circ = 2 * Math.PI * r;
-        let offset = 0;
-        const entries = Object.entries(catTotals).sort((a, b) => b[1] - a[1]);
+      document.getElementById('expTotalAllTWD').textContent = `NT$ ${roundedAllTWD.toLocaleString()}`;
+      document.getElementById('expTotalJPY').textContent = `¥ ${Math.round(totalJPY).toLocaleString()}`;
+      document.getElementById('expTotalTWD').textContent = `NT$ ${Math.round(totalTWD).toLocaleString()}`;
 
-        if (grandTotal === 0) {
-          svg.innerHTML = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#E2E8F0" stroke-width="22" />`;
-        } else {
-          const arcs = entries.map(([cat, val]) => {
-            const pct = val / grandTotal;
-            const dash = pct * circ;
-            const color = EXPENSE_COLORS[cat] || '#9AA5B1';
-            const circle = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="22" stroke-dasharray="${dash} ${circ - dash}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})" />`;
-            offset += dash;
-            return circle;
-          }).join('');
-          svg.innerHTML = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#F1F5F9" stroke-width="22" />${arcs}`;
-        }
+      const remEl = document.getElementById('expRemaining');
+      remEl.textContent = `${remainingTWD < 0 ? '-' : ''}NT$ ${Math.abs(remainingTWD).toLocaleString()}`;
+      remEl.className = `font-display font-bold text-lg mt-0.5 ${remainingTWD < 0 ? 'text-rose-600' : 'text-emerald-700'}`;
+
+      document.getElementById('expProgressPct').textContent = `${pct}%`;
+      const bar = document.getElementById('expProgressBar');
+      bar.style.width = `${pct}%`;
+      bar.className = `h-full rounded-full transition-all duration-300 ${pct > 100 ? 'bg-rose-500' : pct > 85 ? 'bg-warmwood' : 'bg-pine'}`;
+
+      const listEl = document.getElementById('expenseList');
+      if (!listEl) return;
+
+      if (appData.expenses.length === 0) {
+        listEl.innerHTML = `<div class="p-8 text-center text-sm text-slate-400">尚無支出紀錄，點擊上方「＋ 記一筆支出」開始記帳</div>`;
+        return;
       }
+
+      const hasSortable = typeof Sortable !== 'undefined';
+
+      listEl.innerHTML = appData.expenses.map((ex, idx) => {
+        const amt = parseFloat(ex.amount) || 0;
+        const twdEquiv = ex.currency === 'JPY' ? Math.round(amt * rate) : Math.round(amt);
+        return `
+          <div data-expense-id="${ex.id}" class="p-3.5 sm:px-5 flex items-center justify-between gap-2.5 hover:bg-white/70 transition bg-white/40">
+            <div class="flex items-center gap-2.5 min-w-0">
+              ${hasSortable ? `
+                <div class="expense-drag-handle cursor-grab active:cursor-grabbing px-1 text-slate-300 hover:text-pine text-base leading-none shrink-0 select-none" title="按住拖曳調整順序">⋮⋮</div>
+              ` : `
+                <div class="flex flex-col gap-0.5 shrink-0">
+                  <button type="button" onclick="moveExpenseStep('${ex.id}', -1)" ${idx === 0 ? 'disabled' : ''} class="text-[10px] px-1 rounded bg-snow border border-slate-200 text-slate-500 disabled:opacity-30">↑</button>
+                  <button type="button" onclick="moveExpenseStep('${ex.id}', 1)" ${idx === appData.expenses.length - 1 ? 'disabled' : ''} class="text-[10px] px-1 rounded bg-snow border border-slate-200 text-slate-500 disabled:opacity-30">↓</button>
+                </div>
+              `}
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="px-2 py-0.5 rounded-md bg-ice/80 text-pine text-[11px] font-bold">${escapeHtml(ex.category)}</span>
+                  ${ex.date ? `<span class="text-[11px] font-bold text-slate-500">${escapeHtml(ex.date)}</span>` : ''}
+                  ${ex.isEstimate ? `<span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-bold">預估</span>` : `<span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">實際</span>`}
+                </div>
+                <div class="font-bold text-sm text-slateink mt-1 truncate">${escapeHtml(ex.title)}</div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 shrink-0">
+              <div class="text-right">
+                <div class="font-display font-bold text-sm text-slateink">
+                  ${ex.currency === 'JPY' ? '¥' : 'NT$'} ${amt.toLocaleString()}
+                </div>
+                ${ex.currency === 'JPY' ? `<div class="text-[11px] text-slate-400">≈ NT$ ${twdEquiv.toLocaleString()}</div>` : ''}
+              </div>
+              <button onclick="openExpenseModal('${ex.id}')" class="px-2 py-1 rounded-lg bg-white hover:bg-ice/60 border border-slate-200 text-xs text-slate-600">編輯</button>
+              <button onclick="confirmDelete('expenses', '${ex.id}', '${escapeHtml(ex.title)}')" class="px-2 py-1 rounded-lg bg-white hover:bg-rose-50 border border-slate-200 text-xs text-rose-600">🗑️</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      initExpenseSortable();
+    }
 
       // Render Category Breakdown Bars
       const barsEl = document.getElementById('expenseCategoryBars');
@@ -2595,8 +2679,9 @@
       } else {
         appData.expenses.unshift(payload);
       }
+      sortExpensesByDate();
       closeModal('expenseModal');
-      persistData(editId ? '已更新支出紀錄' : '已新增支出紀錄');
+      persistData(editId ? '已更新支出並依日期排序' : '已新增支出並依日期排序');
       renderExpenses();
     }
 
