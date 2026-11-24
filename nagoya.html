@@ -2281,7 +2281,7 @@
       document.getElementById('dayMetaTheme').value = meta.theme;
       openModal('dayMetaModal');
     }
-
+    
     function saveDayMeta(e) {
       e.preventDefault();
       const dayNum = parseInt(document.getElementById('editDayMetaNum').value, 10);
@@ -2294,8 +2294,8 @@
         appData.daysMeta[idx].city = document.getElementById('dayMetaCity').value.trim();
         appData.daysMeta[idx].theme = document.getElementById('dayMetaTheme').value.trim();
 
-        // 若修改的是 DAY 1 的日期，自動將 DAY 2 ~ 最後一天全部往後順延遞增
-        if (dayNum === 1 && iso) {
+        // 只要修改的是「第一天」(idx === 0)，自動將後面所有天數全部往後順延遞增
+        if (idx === 0 && iso) {
           for (let i = 1; i < appData.daysMeta.length; i++) {
             const nextIso = addDaysISO(iso, i);
             appData.daysMeta[i].isoDate = nextIso;
@@ -2314,7 +2314,7 @@
         }
       }
       closeModal('dayMetaModal');
-      persistData(dayNum === 1 ? '已更新 DAY 1 並自動順延後續日期' : `已更新 DAY ${dayNum} 日期與概述`);
+      persistData(idx === 0 ? '已更新第一天並自動順延後續日期' : `已更新 DAY ${dayNum} 日期與概述`);
       renderItinerary();
     }
 
