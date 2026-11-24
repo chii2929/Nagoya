@@ -2285,17 +2285,36 @@
     function saveDayMeta(e) {
       e.preventDefault();
       const dayNum = parseInt(document.getElementById('editDayMetaNum').value, 10);
-      const idx = appData.daysMeta.findIndex(d => d.day === dayNum);
+      const idx = appData.daysMeta.findIndex(d => Number(d.day) === dayNum);
       if (idx > -1) {
-        appData.daysMeta[idx].label = document.getElementById('dayMetaLabel').value.trim();
         const iso = document.getElementById('dayMetaDate').value;
+        appData.daysMeta[idx].label = document.getElementById('dayMetaLabel').value.trim();
         appData.daysMeta[idx].isoDate = iso;
         appData.daysMeta[idx].date = formatShortCalDate(iso);
         appData.daysMeta[idx].city = document.getElementById('dayMetaCity').value.trim();
         appData.daysMeta[idx].theme = document.getElementById('dayMetaTheme').value.trim();
+
+        // 若修改的是 DAY 1 的日期，自動將 DAY 2 ~ 最後一天全部往後順延遞增
+        if (dayNum === 1 && iso) {
+          for (let i = 1; i < appData.daysMeta.length; i++) {
+            const nextIso = addDaysISO(iso, i);
+            appData.daysMeta[i].isoDate = nextIso;
+            appData.daysMeta[i].date = formatShortCalDate(nextIso);
+          }
+          // 同步更新頂部標題列的出發與回程日期
+          const lastIso = appData.daysMeta[appData.daysMeta.length - 1].isoDate;
+          if (appData.settings) {
+            appData.settings.tripStartDate = iso;
+            appData.settings.tripEndDate = lastIso;
+            if (typeof formatFullCalDate === 'function') {
+              appData.settings.tripDateRange = `${formatFullCalDate(iso)} – ${formatShortCalDate(lastIso)}`;
+            }
+          }
+          if (typeof renderHeader === 'function') renderHeader();
+        }
       }
       closeModal('dayMetaModal');
-      persistData(`已更新 DAY ${dayNum} 概述`);
+      persistData(dayNum === 1 ? '已更新 DAY 1 並自動順延後續日期' : `已更新 DAY ${dayNum} 日期與概述`);
       renderItinerary();
     }
 
