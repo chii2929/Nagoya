@@ -846,6 +846,11 @@
           <label class="block text-xs font-bold text-slate-600 mb-1">大標（第幾天）</label>
           <input type="text" id="dayMetaLabel" placeholder="留白會自動顯示 DAY 1、DAY 2…" class="w-full rounded-xl border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pine/40" />
         </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1.5">DAY 標籤顏色</label>
+          <input type="hidden" id="dayMetaColor" value="pine" />
+          <div id="dayColorPicker" class="flex flex-wrap gap-2"></div>
+        </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-bold text-slate-600 mb-1">日期 *</label>
@@ -1024,6 +1029,23 @@
       '傍晚': 'bg-amber-50 text-amber-700',
       '晚上': 'bg-indigo-50 text-indigo-700',
       '彈性': 'bg-slate-100 text-slate-600'
+    };
+
+    const TIMESLOT_ORDER = {
+      '早上': 1,
+      '下午': 2,
+      '傍晚': 3,
+      '晚上': 4,
+      '彈性': 5
+    };
+
+    // 5 種低飽和冬日莫蘭迪標籤配色
+    const DAY_BADGE_COLORS = {
+      pine:  { name: '松霧綠', hex: '#4F6D68', badgeCls: 'bg-[#4F6D68] text-white' },
+      wood:  { name: '暖木橘', hex: '#B87D62', badgeCls: 'bg-[#B87D62] text-white' },
+      mist:  { name: '霧靄藍', hex: '#5D7B93', badgeCls: 'bg-[#5D7B93] text-white' },
+      rose:  { name: '豆沙粉', hex: '#A9747E', badgeCls: 'bg-[#A9747E] text-white' },
+      plum:  { name: '紫藤灰', hex: '#7E728E', badgeCls: 'bg-[#7E728E] text-white' }
     };
 
     const EXPENSE_COLORS = {
@@ -1235,6 +1257,7 @@
     let currentPhraseCategory = '全部';
     let snowEnabled = true;
     let sortableInstances = [];
+    let dayListSortable = null;
     let phraseSortable = null;
     let expenseSortable = null;
 
@@ -1246,7 +1269,8 @@
           const defaults = getDefaultData();
           const mergedDays = (Array.isArray(parsed.daysMeta) && parsed.daysMeta.length > 0 ? parsed.daysMeta : defaults.daysMeta).map((d, i) => {
             const iso = d.isoDate || parseLegacyDateToISO(d.date, addDaysISO('2027-01-11', i));
-            return { ...d, day: Number(d.day) || (i + 1), isoDate: iso, date: d.date || formatShortCalDate(iso) };
+            const autoColor = d.color || (((d.city || '').includes('明寶') || (d.city || '').includes('郡上')) ? 'wood' : 'pine');
+            return { ...d, day: Number(d.day) || (i + 1), color: autoColor, isoDate: iso, date: d.date || formatShortCalDate(iso) };
           });
           const mergedTransports = (Array.isArray(parsed.transports) ? parsed.transports : defaults.transports).map(t => {
             const iso = t.isoDate || parseLegacyDateToISO(t.date, '2027-01-11');
@@ -1258,7 +1282,7 @@
             return { ...h, checkIn: ci, checkOut: co, dates: h.dates || formatHotelDateRange(ci, co) };
           });
           const mergedExpenses = (Array.isArray(parsed.expenses) ? parsed.expenses : defaults.expenses).map(ex => {
-            const iso = ex.isoDate !== undefined ? ex.isoDate : parseLegacyDateToISO(ex.date, '');
+            const iso = ex.isoDate || parseLegacyDateToISO(ex.date, '');
             return { ...ex, isoDate: iso, date: iso ? formatShortCalDate(iso) : (ex.date || '') };
           });
           return {
@@ -1289,99 +1313,102 @@
       if (toastMsg) showToast(toastMsg);
     }
 
-    let toastTimer = null;
     function showToast(msg) {
-      const toast = document.getElementById('toast');
-      if (!toast) return;
-      toast.textContent = msg;
-      toast.classList.remove('opacity-0');
-      toast.classList.add('opacity-100');
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => {
-        toast.classList.remove('opacity-100');
-        toast.classList.add('opacity-0');
-      }, 2200);
+      const el = document.getElementById('toast');
+      if (!el) return;
+      el.textContent = msg;
+      el.classList.remove('opacity-0');
+      el.classList.add('opacity-100');
+      clearTimeout(el._timer);
+      el._timer = setTimeout(() => {
+        el.classList.remove('opacity-100');
+        el.classList.add('opacity-0');
+      }, 2400);
     }
 
     function toTWD(amount, currency) {
       const num = parseFloat(amount) || 0;
-      if (currency === 'JPY') {
-        return Math.round(num * (appData.settings.exchangeRate || 0.215));
-      }
-      return Math.round(num);
+      const rate = parseFloat(appData.settings.exchangeRate) || 0.215;
+      return currency === 'JPY' ? Math.round(num * rate) : Math.round(num);
     }
 
     function updateDashboardStats() {
       const itemCountEl = document.getElementById('statItemCount');
-      const pendingCountEl = document.getElementById('statPendingCount');
-      const totalSpentEl = document.getElementById('statTotalSpent');
-      const budgetLimitTextEl = document.getElementById('statBudgetLimitText');
-      const remainingEl = document.getElementById('statRemaining');
-      const budgetBarEl = document.getElementById('statBudgetBar');
+      if (itemCountEl) itemCountEl.textContent = `共 ${appData.itinerary.length} 個行程項目`;
 
-      if (itemCountEl) {
-        itemCountEl.textContent = `共 ${appData.itinerary.length} 個行程項目`;
+      const pendingTr = appData.transports.filter(t => t.status === '尚未預約').length;
+      const pendingHt = appData.hotels.filter(h => h.status === '尚未預約').length;
+      const pendingRm = (appData.reminders || []).filter(r => !r.done);
+      const totalPending = pendingTr + pendingHt + pendingRm.length;
+
+      const pendingEl = document.getElementById('statPendingCount');
+      if (pendingEl) pendingEl.textContent = `${totalPending} 項待處理`;
+
+      const nextRmEl = document.getElementById('statNextReminder');
+      if (nextRmEl) {
+        const sortedRm = [...pendingRm].sort((a, b) => `${a.date}T${a.time}`.localeCompare(`${b.date}T${b.time}`));
+        nextRmEl.textContent = sortedRm.length > 0
+          ? `下一筆：${formatReminderDate(sortedRm[0].date)} ${sortedRm[0].title}`
+          : '搶票提醒已全部完成！';
       }
 
-      const pendingItinerary = appData.itinerary.filter(i => i.status === '尚未預約').length;
-      const pendingTransports = appData.transports.filter(t => t.status === '尚未預約').length;
-      const pendingHotels = appData.hotels.filter(h => h.status === '尚未預約').length;
-      const totalPending = pendingItinerary + pendingTransports + pendingHotels;
-      if (pendingCountEl) {
-        pendingCountEl.textContent = `${totalPending} 項待處理`;
+      let grandTotal = 0;
+      appData.expenses.forEach(ex => {
+        grandTotal += toTWD(ex.amount, ex.currency);
+      });
+      const limit = parseFloat(appData.settings.budgetLimit) || 80000;
+      const remaining = limit - grandTotal;
+      const pct = limit > 0 ? Math.min(100, Math.round((grandTotal / limit) * 100)) : 0;
+
+      const spentEl = document.getElementById('statTotalSpent');
+      if (spentEl) spentEl.textContent = `NT$ ${grandTotal.toLocaleString()}`;
+
+      const limitEl = document.getElementById('statBudgetLimitText');
+      if (limitEl) limitEl.textContent = `預算上限 NT$ ${limit.toLocaleString()}`;
+
+      const remEl = document.getElementById('statRemaining');
+      if (remEl) {
+        remEl.textContent = `${remaining < 0 ? '-' : ''}NT$ ${Math.abs(remaining).toLocaleString()}`;
+        remEl.className = `font-display text-lg font-bold mt-0.5 ${remaining < 0 ? 'text-rose-600' : 'text-emerald-700'}`;
       }
 
-      const nextReminderEl = document.getElementById('statNextReminder');
-      if (nextReminderEl) {
-        const upcoming = getSortedReminders().find(r => !r.done);
-        if (upcoming) {
-          const shortDate = formatReminderDate(upcoming.date);
-          nextReminderEl.textContent = `下一筆：${shortDate} ${upcoming.time || ''} ${upcoming.title}`;
-        } else {
-          nextReminderEl.textContent = '搶票提醒已全數完成 ✨';
-        }
-      }
-
-      const totalSpent = appData.expenses.reduce((sum, ex) => sum + toTWD(ex.amount, ex.currency), 0);
-      const limit = appData.settings.budgetLimit || 80000;
-      const remaining = limit - totalSpent;
-      const pct = Math.min(100, Math.round((totalSpent / Math.max(1, limit)) * 100));
-
-      if (totalSpentEl) totalSpentEl.textContent = `NT$ ${totalSpent.toLocaleString()}`;
-      if (budgetLimitTextEl) budgetLimitTextEl.textContent = `預算上限 NT$ ${limit.toLocaleString()}`;
-      if (remainingEl) {
-        remainingEl.textContent = `NT$ ${remaining.toLocaleString()}`;
-        remainingEl.className = `font-display text-lg font-bold mt-0.5 ${remaining >= 0 ? 'text-emerald-700' : 'text-rose-600'}`;
-      }
-      if (budgetBarEl) {
-        budgetBarEl.style.width = `${pct}%`;
-        budgetBarEl.className = `h-full rounded-full transition-all duration-500 ${remaining >= 0 ? 'bg-pine' : 'bg-rose-500'}`;
+      const barEl = document.getElementById('statBudgetBar');
+      if (barEl) {
+        barEl.style.width = `${pct}%`;
+        barEl.className = `h-full rounded-full transition-all duration-500 ${pct > 100 ? 'bg-rose-500' : pct > 85 ? 'bg-warmwood' : 'bg-pine'}`;
       }
     }
 
-    // ==================== NAVIGATION TABS ====================
     function switchTab(tabName) {
-      const tabs = ['itinerary', 'transport', 'hotels', 'expenses', 'phrases'];
-      tabs.forEach(t => {
-        const view = document.getElementById(`view-${t}`);
-        const btn = document.getElementById(`tab-${t}`);
-        if (view) view.classList.toggle('hidden', t !== tabName);
+      ['itinerary', 'transport', 'hotels', 'expenses', 'phrases'].forEach(name => {
+        const view = document.getElementById(`view-${name}`);
+        const btn = document.getElementById(`tab-${name}`);
+        if (view) view.classList.toggle('hidden', name !== tabName);
         if (btn) {
-          if (t === tabName) {
-            btn.className = 'tab-btn flex-1 min-w-[96px] py-2.5 px-3 rounded-xl text-sm font-bold transition flex items-center justify-center gap-1.5 bg-pine text-white shadow-sm';
+          if (name === tabName) {
+            btn.classList.add('bg-pine', 'text-white', 'shadow-sm');
+            btn.classList.remove('text-slate-600', 'hover:bg-white/70');
           } else {
-            btn.className = 'tab-btn flex-1 min-w-[96px] py-2.5 px-3 rounded-xl text-sm font-bold transition flex items-center justify-center gap-1.5 text-slate-600 hover:bg-white/70';
+            btn.classList.remove('bg-pine', 'text-white', 'shadow-sm');
+            btn.classList.add('text-slate-600', 'hover:bg-white/70');
           }
         }
       });
     }
 
-    // ==================== EDITABLE HERO HEADER ====================
+    // ==================== EDITABLE HERO HEADER & SECTION TEXTS ====================
     function renderHeader() {
       const dateEl = document.getElementById('tripDateRangeEl');
       const titleEl = document.getElementById('tripTitleEl');
       const subEl = document.getElementById('tripSubtitleEl');
-      if (dateEl) dateEl.textContent = appData.settings.tripDateRange || '2027/01/11 (一) – 01/25 (一)';
+      if (dateEl) {
+        const s = appData.settings.tripStartDate;
+        const e = appData.settings.tripEndDate;
+        if (s && e) {
+          appData.settings.tripDateRange = `${formatFullCalDate(s)} – ${formatShortCalDate(e)}`;
+        }
+        dateEl.textContent = appData.settings.tripDateRange || '2027/01/11 (一) – 01/25 (一)';
+      }
       if (titleEl) titleEl.textContent = appData.settings.tripTitle || '日本中部・北陸 15 天冬日獨旅手帳';
       if (subEl) subEl.textContent = appData.settings.tripSubtitle || '名古屋大本營 × 金澤 × 白川鄉合掌村 × 高山雪見溫泉 × 明寶三天滑雪';
     }
@@ -1400,35 +1427,31 @@
       const newDate = (dateEl?.textContent || '').trim() || '2027/01/11 (一) – 01/25 (一)';
       const newTitle = (titleEl?.textContent || '').trim() || '日本中部・北陸 15 天冬日獨旅手帳';
       const newSub = (subEl?.textContent || '').trim();
-      const changed =
-        newDate !== appData.settings.tripDateRange ||
-        newTitle !== appData.settings.tripTitle ||
-        newSub !== appData.settings.tripSubtitle;
       appData.settings.tripDateRange = newDate;
       appData.settings.tripTitle = newTitle;
       appData.settings.tripSubtitle = newSub;
-      if (dateEl) dateEl.textContent = newDate;
-      if (titleEl) titleEl.textContent = newTitle;
-      if (subEl) subEl.textContent = newSub;
-      if (changed) persistData('已更新手帳標題與日期');
+      persistData('已更新手帳標題');
     }
 
     function renderSectionTexts() {
       document.querySelectorAll('[data-setting-key]').forEach(el => {
-        const v = appData.settings[el.dataset.settingKey];
-        if (typeof v === 'string') el.textContent = v;
+        const key = el.dataset.settingKey;
+        if (appData.settings[key] !== undefined) {
+          el.textContent = appData.settings[key];
+        }
       });
     }
 
     function saveSectionText(el) {
       const key = el.dataset.settingKey;
-      let val = (el.textContent || '').trim();
-      if (!val && el.dataset.required) { renderSectionTexts(); return; }
-      el.textContent = val;
-      if (appData.settings[key] !== val) {
-        appData.settings[key] = val;
-        persistData('已更新標題');
+      if (!key) return;
+      const val = (el.textContent || '').trim();
+      if (el.dataset.required === 'true' && !val) {
+        renderSectionTexts();
+        return;
       }
+      appData.settings[key] = val;
+      persistData('已更新區塊標題');
     }
 
     function renumberDays() {
@@ -1438,11 +1461,53 @@
       appData.expandedDays = appData.expandedDays.filter(n => map[n]).map(n => map[n]);
     }
 
+    // 依照「早上 → 下午 → 傍晚 → 晚上 → 彈性」穩定排序同一天的行程
+    function sortItineraryByTimeSlot() {
+      const indexed = appData.itinerary.map((item, idx) => ({ item, idx }));
+      indexed.sort((a, b) => {
+        const dayDiff = Number(a.item.day) - Number(b.item.day);
+        if (dayDiff !== 0) return dayDiff;
+        const slotA = TIMESLOT_ORDER[a.item.timeSlot] || 99;
+        const slotB = TIMESLOT_ORDER[b.item.timeSlot] || 99;
+        if (slotA !== slotB) return slotA - slotB;
+        return a.idx - b.idx;
+      });
+      appData.itinerary = indexed.map(x => x.item);
+    }
+
+    // 拖曳或刪除天數後，自動重新計算 DAY 1 ~ DAY N 與順延所有日期
+    function recalculateDaysAndDatesAfterReorder() {
+      const startIso = appData.settings.tripStartDate || appData.daysMeta[0]?.isoDate || '2027-01-11';
+      appData.daysMeta.forEach((meta, idx) => {
+        const newIso = addDaysISO(startIso, idx);
+        meta.isoDate = newIso;
+        meta.date = formatShortCalDate(newIso);
+        // 若原本 label 是自動格式 "DAY X"，一併更新數字；自訂標題則保留
+        if (meta.label && /^DAY\s*\d+$/i.test(meta.label.trim())) {
+          meta.label = `DAY ${idx + 1}`;
+        }
+      });
+
+      if (appData.daysMeta.length > 0) {
+        const lastIso = appData.daysMeta[appData.daysMeta.length - 1].isoDate;
+        appData.settings.tripStartDate = startIso;
+        appData.settings.tripEndDate = lastIso;
+        appData.settings.tripDateRange = `${formatFullCalDate(startIso)} – ${formatShortCalDate(lastIso)}`;
+      }
+
+      // 同步更新有連動的交通與飯店日期
+      appData.itinerary.forEach(item => {
+        if (item.linkedTransportId || item.linkedHotelId) {
+          syncItineraryToLinkedRecords(item);
+        }
+      });
+    }
+
     function addDay() {
       const n = appData.daysMeta.length + 1;
       const prev = appData.daysMeta[appData.daysMeta.length - 1];
       const nextIso = prev && prev.isoDate ? addDaysISO(prev.isoDate, 1) : '2027-01-26';
-      appData.daysMeta.push({ day: n, label: '', isoDate: nextIso, date: formatShortCalDate(nextIso), city: '', theme: '' });
+      appData.daysMeta.push({ day: n, label: '', color: 'pine', isoDate: nextIso, date: formatShortCalDate(nextIso), city: '', theme: '' });
       appData.expandedDays.push(n);
       persistData(`已新增 DAY ${n}`);
       renderItinerary();
@@ -1454,15 +1519,19 @@
       if (!meta) return;
       closeModal('dayMetaModal');
       document.getElementById('confirmTitle').textContent = '確定要刪除這一天嗎？';
-      document.getElementById('confirmMessage').textContent = `即將刪除「${meta.label || 'DAY ' + dayNum}」及當天所有行程，後面的天數會自動往前遞補。`;
+      document.getElementById('confirmMessage').textContent = `即將刪除「${meta.label || 'DAY ' + dayNum}」及當天所有行程，後面的天數與日期會自動往前遞補。`;
       document.getElementById('confirmActionBtn').onclick = () => {
         appData.itinerary = appData.itinerary.filter(it => Number(it.day) !== Number(dayNum));
         appData.daysMeta = appData.daysMeta.filter(d => Number(d.day) !== Number(dayNum));
         appData.expandedDays = appData.expandedDays.filter(n => Number(n) !== Number(dayNum));
         renumberDays();
+        recalculateDaysAndDatesAfterReorder();
         closeModal('confirmModal');
-        persistData('已刪除這一天');
+        persistData('已刪除這一天並自動順延日期');
+        renderHeader();
         renderItinerary();
+        renderTransports();
+        renderHotels();
       };
       openModal('confirmModal');
     }
@@ -1563,19 +1632,23 @@
 
         const isExpanded = isFiltering || appData.expandedDays.some(d => Number(d) === dayNum);
         meta.city = meta.city || ''; meta.date = meta.date || ''; meta.theme = meta.theme || '';
-        const isSkiDay = meta.city.includes('明寶') || meta.city.includes('郡上');
-        const badgeBg = isSkiDay ? 'bg-warmwood' : 'bg-pine';
+        const defaultKey = (meta.city.includes('明寶') || meta.city.includes('郡上')) ? 'wood' : 'pine';
+        const colorKey = (meta.color && DAY_BADGE_COLORS[meta.color]) ? meta.color : defaultKey;
+        const badgeCls = DAY_BADGE_COLORS[colorKey].badgeCls;
 
         return `
-          <div class="glass-card rounded-2xl border border-white/90">
+          <div class="day-card-wrapper glass-card rounded-2xl border border-white/90" data-day-num="${dayNum}">
             <!-- Sticky Day Accordion Header -->
             <div
               onclick="toggleDay(${dayNum})"
-              class="day-sticky-header bg-white/95 backdrop-blur-md px-4 py-3.5 ${isExpanded ? 'rounded-t-2xl border-b border-slate-200/70' : 'rounded-2xl'} flex flex-col sm:flex-row sm:items-center justify-between gap-2 cursor-pointer hover:bg-snow/95 transition shadow-sm"
+              class="day-sticky-header bg-white/95 backdrop-blur-md px-3 sm:px-4 py-3.5 ${isExpanded ? 'rounded-t-2xl border-b border-slate-200/70' : 'rounded-2xl'} flex flex-col sm:flex-row sm:items-center justify-between gap-2 cursor-pointer hover:bg-snow/95 transition shadow-sm"
             >
-              <div class="flex items-center gap-2.5 min-w-0">
+              <div class="flex items-center gap-2 min-w-0">
+                ${!isFiltering && hasSortable ? `
+                  <div onclick="event.stopPropagation()" class="day-drag-handle drag-handle px-1 text-slate-300 hover:text-pine text-base leading-none shrink-0" title="按住拖曳調整整天順序">⋮⋮</div>
+                ` : ''}
                 <span class="text-slate-400 text-xs transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}">▶</span>
-                <span class="${badgeBg} text-white font-display text-xs font-bold px-2.5 py-1 rounded-lg shrink-0">${escapeHtml(meta.label || 'DAY ' + dayNum)}</span>
+                <span class="${badgeCls} font-display text-xs font-bold px-2.5 py-1 rounded-lg shrink-0 shadow-xs">${escapeHtml(meta.label || 'DAY ' + dayNum)}</span>
                 <span class="text-xs font-bold text-slate-600 shrink-0">${escapeHtml(meta.date)}</span>
                 <span class="px-2 py-0.5 rounded-full bg-ice/80 text-pine text-[11px] font-bold shrink-0">${escapeHtml(meta.city)}</span>
                 <span class="text-xs text-slate-500 truncate hidden md:inline">${escapeHtml(meta.theme)}</span>
@@ -1587,7 +1660,7 @@
                   type="button"
                   onclick="event.stopPropagation(); openDayMetaModal(${dayNum})"
                   class="px-2.5 py-1 rounded-lg bg-snow hover:bg-ice/70 border border-slate-200 text-xs font-medium text-slate-600 transition"
-                  title="編輯大標與概述"
+                  title="編輯大標、顏色與概述"
                 >
                   編輯
                 </button>
@@ -1677,7 +1750,61 @@
         </div>
       `;
 
+      initDayListSortable(isFiltering);
       initDaySortables(isFiltering);
+    }
+
+    function initDayListSortable(isFiltering) {
+      if (dayListSortable) {
+        try { dayListSortable.destroy(); } catch (e) {}
+        dayListSortable = null;
+      }
+      if (isFiltering || typeof Sortable === 'undefined') return;
+      const listEl = document.getElementById('itineraryList');
+      if (!listEl) return;
+
+      dayListSortable = new Sortable(listEl, {
+        animation: 200,
+        handle: '.day-drag-handle',
+        draggable: '.day-card-wrapper',
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        onEnd: () => {
+          const orderedOldDays = Array.from(listEl.querySelectorAll('.day-card-wrapper')).map(el => parseInt(el.dataset.dayNum, 10));
+          const oldMetaMap = new Map(appData.daysMeta.map(m => [Number(m.day), m]));
+          const oldDayToNewDay = new Map();
+          const newDaysMeta = [];
+
+          orderedOldDays.forEach((oldDay, idx) => {
+            const newDay = idx + 1;
+            oldDayToNewDay.set(oldDay, newDay);
+            const m = oldMetaMap.get(oldDay);
+            if (m) {
+              m.day = newDay;
+              newDaysMeta.push(m);
+            }
+          });
+
+          if (newDaysMeta.length === appData.daysMeta.length) {
+            appData.daysMeta = newDaysMeta;
+            appData.itinerary.forEach(item => {
+              const mapped = oldDayToNewDay.get(Number(item.day));
+              if (mapped) item.day = mapped;
+            });
+            appData.expandedDays = appData.expandedDays
+              .map(d => oldDayToNewDay.get(Number(d)))
+              .filter(Boolean);
+
+            sortItineraryByTimeSlot();
+            recalculateDaysAndDatesAfterReorder();
+            persistData('已調換天數順序並自動更新日期');
+            renderHeader();
+            renderItinerary();
+            renderTransports();
+            renderHotels();
+          }
+        }
+      });
     }
 
     function initDaySortables(isFiltering) {
@@ -1735,7 +1862,8 @@
 
       if (rebuilt.length === appData.itinerary.length) {
         appData.itinerary = rebuilt;
-        persistData('已更新行程順序');
+        sortItineraryByTimeSlot();
+        persistData('已更新行程順序（依時段自動排列）');
         renderItinerary();
       }
     }
@@ -2364,12 +2492,39 @@
       sel.innerHTML = appData.daysMeta.map(d => `<option value="${d.day}">${escapeHtml(d.label || 'DAY ' + d.day)} - ${escapeHtml(d.date)} (${escapeHtml(d.city)})</option>`).join('');
     }
 
+    function renderDayColorPicker(selectedKey) {
+      const container = document.getElementById('dayColorPicker');
+      const hiddenInput = document.getElementById('dayMetaColor');
+      if (!container || !hiddenInput) return;
+      hiddenInput.value = selectedKey;
+      container.innerHTML = Object.entries(DAY_BADGE_COLORS).map(([key, meta]) => {
+        const active = key === selectedKey;
+        return `
+          <button
+            type="button"
+            onclick="selectDayBadgeColor('${key}')"
+            class="px-2.5 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition ${active ? 'border-slateink bg-white ring-2 ring-slateink/25 shadow-xs' : 'border-slate-200 bg-snow/80 hover:bg-white text-slate-600'}"
+          >
+            <span class="w-3.5 h-3.5 rounded-full shrink-0" style="background:${meta.hex}"></span>
+            <span>${meta.name}</span>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function selectDayBadgeColor(key) {
+      renderDayColorPicker(key);
+    }
+
     function openDayMetaModal(dayNum) {
       const meta = appData.daysMeta.find(d => Number(d.day) === Number(dayNum));
       if (!meta) return;
-      document.getElementById('dayMetaModalTitle').textContent = `編輯 DAY ${dayNum} 大標與概述`;
+      document.getElementById('dayMetaModalTitle').textContent = `編輯 DAY ${dayNum} 大標、顏色與概述`;
       document.getElementById('dayMetaLabel').value = meta.label || '';
       document.getElementById('editDayMetaNum').value = dayNum;
+      const defaultKey = ((meta.city || '').includes('明寶') || (meta.city || '').includes('郡上')) ? 'wood' : 'pine';
+      const colorKey = (meta.color && DAY_BADGE_COLORS[meta.color]) ? meta.color : defaultKey;
+      renderDayColorPicker(colorKey);
       document.getElementById('dayMetaDate').value = meta.isoDate || parseLegacyDateToISO(meta.date, '2027-01-11');
       document.getElementById('dayMetaCity').value = meta.city;
       document.getElementById('dayMetaTheme').value = meta.theme;
@@ -2383,6 +2538,7 @@
       if (idx > -1) {
         const iso = document.getElementById('dayMetaDate').value;
         appData.daysMeta[idx].label = document.getElementById('dayMetaLabel').value.trim();
+        appData.daysMeta[idx].color = document.getElementById('dayMetaColor').value || 'pine';
         appData.daysMeta[idx].isoDate = iso;
         appData.daysMeta[idx].date = formatShortCalDate(iso);
         appData.daysMeta[idx].city = document.getElementById('dayMetaCity').value.trim();
@@ -2405,7 +2561,7 @@
         }
       }
       closeModal('dayMetaModal');
-      persistData(idx === 0 ? '已更新第一天並自動順延後續日期' : `已更新 DAY ${dayNum} 日期與概述`);
+      persistData(idx === 0 ? '已更新第一天並自動順延後續日期' : `已更新 DAY ${dayNum} 設定`);
       renderItinerary();
     }
 
@@ -2532,8 +2688,9 @@
         if (!appData.expandedDays.some(d => Number(d) === dayVal)) appData.expandedDays.push(dayVal);
       }
 
+      sortItineraryByTimeSlot();
       closeModal('itemModal');
-      persistData(editId ? '已更新行程並同步連動' : '已新增行程並同步連動');
+      persistData(editId ? '已更新行程並依時段自動排序' : '已新增行程並依時段自動排序');
       renderItinerary();
       renderTransports();
       renderHotels();
@@ -2831,6 +2988,7 @@
 
     // ==================== INITIALIZATION ====================
     function renderAll() {
+      sortItineraryByTimeSlot();
       renderHeader();
       renderSectionTexts();
       renderCategoryPills();
