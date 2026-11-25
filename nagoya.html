@@ -53,13 +53,24 @@
     /* Sticky Day header positioned cleanly right below the sticky nav bar */
     .day-sticky-header {
       position: sticky;
-      top: 66px;
+      top: 10px;
       z-index: 20;
     }
     @media (min-width: 640px) {
       .day-sticky-header {
         top: 68px;
       }
+    }
+
+    /* Safe area bottom padding for mobile app bar */
+    .pb-safe {
+      padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+    }
+
+    /* Today warm glow highlight */
+    .today-glow-card {
+      box-shadow: 0 0 0 2px rgba(229, 152, 102, 0.75), 0 12px 32px rgba(184, 118, 84, 0.18) !important;
+      background: rgba(255, 253, 249, 0.94) !important;
     }
 
     /* Fixed illustrated winter scenery background */
@@ -223,11 +234,11 @@
   <canvas id="snowCanvas" aria-hidden="true"></canvas>
 
   <!-- ==================== MAIN APPLICATION CONTAINER ==================== -->
-  <div class="relative z-10 max-w-5xl mx-auto px-3 sm:px-6 py-5 sm:py-8 pb-24">
+  <div class="relative z-10 max-w-5xl mx-auto px-3 sm:px-6 py-4 sm:py-8 pb-28 sm:pb-24">
 
     <!-- Top Hero Banner -->
-    <header class="glass-card rounded-3xl p-5 sm:p-7 mb-5 relative overflow-hidden">
-      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <header class="glass-card rounded-3xl p-4 sm:p-7 mb-5 relative">
+      <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3.5">
         <div class="flex-1 min-w-0">
           <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-ice/80 text-pine text-xs font-bold tracking-wider mb-2">
             <span>❄️ WINTER SOLO TRIP</span>
@@ -250,7 +261,7 @@
               onblur="saveHeaderText()"
               onkeydown="handleHeaderKeydown(event)"
               title="點擊直接編輯主標題"
-              class="font-display text-2xl sm:text-3xl font-bold text-slateink tracking-tight rounded-xl px-1.5 -mx-1.5 py-0.5 hover:bg-white/70 focus:bg-white focus:outline-none focus:ring-2 focus:ring-pine/40 transition cursor-text"
+              class="font-display text-xl sm:text-3xl font-bold text-slateink tracking-tight rounded-xl px-1.5 -mx-1.5 py-0.5 hover:bg-white/70 focus:bg-white focus:outline-none focus:ring-2 focus:ring-pine/40 transition cursor-text"
             >
               日本中部・北陸 15 天冬日獨旅手帳
             </h1>
@@ -262,53 +273,99 @@
             onblur="saveHeaderText()"
             onkeydown="handleHeaderKeydown(event)"
             title="點擊直接編輯副標題"
-            class="text-sm text-slate-600 mt-1 rounded-lg px-1.5 -mx-1.5 py-0.5 hover:bg-white/70 focus:bg-white focus:outline-none focus:ring-2 focus:ring-pine/40 transition cursor-text"
+            class="text-xs sm:text-sm text-slate-600 mt-1 rounded-lg px-1.5 -mx-1.5 py-0.5 hover:bg-white/70 focus:bg-white focus:outline-none focus:ring-2 focus:ring-pine/40 transition cursor-text"
           >
             名古屋大本營 × 金澤 × 白川鄉合掌村 × 高山雪見溫泉 × 明寶三天滑雪
           </p>
         </div>
 
-        <!-- Quick Actions & Snow Toggle -->
-        <div class="flex flex-wrap items-center gap-2">
-          <button id="cloudSyncBtn" onclick="openCloudSyncModal()" class="px-3 py-2 rounded-xl bg-pine hover:bg-slateink text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm">
-            <span>☁️</span> <span id="cloudSyncBtnText">登入同步</span>
+        <!-- Top Right: Cloud Sync Status Pill + Consolidated "More" Menu -->
+        <div class="flex items-center justify-between md:justify-end gap-2 shrink-0">
+          <!-- Cloud Sync Status Button with Breathing Green Dot & Last Synced Time -->
+          <button
+            id="cloudSyncBtn"
+            onclick="openCloudSyncModal()"
+            class="px-3 py-2 rounded-2xl bg-white/95 hover:bg-ice/50 border border-slate-200/90 text-slateink text-xs font-bold transition flex items-center gap-2 shadow-sm"
+            title="點擊設定跨裝置同步帳號"
+          >
+            <span id="cloudStatusDotWrap" class="relative flex h-2.5 w-2.5 shrink-0">
+              <span id="cloudStatusPing" class="hidden animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span id="cloudStatusDot" class="relative inline-flex rounded-full h-2.5 w-2.5 bg-slate-300"></span>
+            </span>
+            <div class="text-left leading-tight">
+              <div id="cloudSyncBtnText" class="text-xs font-bold text-slateink">☁️ 登入同步</div>
+              <div id="cloudLastSyncText" class="text-[10px] font-normal text-slate-400 hidden">尚未連線</div>
+            </div>
           </button>
-          <button id="toggleSnowBtn" onclick="toggleSnow()" class="px-3 py-2 rounded-xl bg-white/90 hover:bg-ice/60 border border-slate-200 text-xs font-medium text-slate-700 transition flex items-center gap-1.5 shadow-sm">
-            <span>🌨️</span> <span id="snowBtnText">飄雪：開</span>
-          </button>
-          <button onclick="exportData()" class="px-3 py-2 rounded-xl bg-white/90 hover:bg-ice/60 border border-slate-200 text-xs font-medium text-slate-700 transition flex items-center gap-1.5 shadow-sm" title="匯出 JSON 備份">
-            <span>💾</span> 匯出備份
-          </button>
-          <label class="px-3 py-2 rounded-xl bg-white/90 hover:bg-ice/60 border border-slate-200 text-xs font-medium text-slate-700 transition flex items-center gap-1.5 shadow-sm cursor-pointer" title="匯入 JSON 備份">
-            <span>📂</span> 匯入
-            <input type="file" id="importFileInput" accept=".json" class="hidden" onchange="importData(event)" />
-          </label>
-          <button onclick="openResetConfirm()" class="px-3 py-2 rounded-xl bg-white/90 hover:bg-rose-50 border border-slate-200 text-xs font-medium text-rose-600 transition shadow-sm">
-            ↺ 重設
-          </button>
+
+          <!-- Consolidated "⚙️ 更多" Dropdown Menu -->
+          <div class="relative" id="moreMenuWrapper">
+            <button
+              type="button"
+              id="moreMenuBtn"
+              onclick="toggleMoreMenu(event)"
+              class="px-3 py-2 rounded-2xl bg-white/95 hover:bg-ice/60 border border-slate-200/90 text-xs font-bold text-slate-700 transition flex items-center gap-1.5 shadow-sm"
+            >
+              <span>⚙️</span> <span>更多</span>
+            </button>
+
+            <div
+              id="moreMenuDropdown"
+              class="hidden absolute right-0 mt-2 w-48 rounded-2xl bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-xl py-1.5 z-50 text-xs"
+            >
+              <button
+                type="button"
+                onclick="toggleSnow(); closeMoreMenu();"
+                class="w-full px-3.5 py-2.5 text-left hover:bg-ice/50 text-slate-700 font-medium flex items-center gap-2.5 transition"
+              >
+                <span>🌨️</span> <span id="snowBtnText">飄雪特效：開</span>
+              </button>
+              <button
+                type="button"
+                onclick="exportData(); closeMoreMenu();"
+                class="w-full px-3.5 py-2.5 text-left hover:bg-ice/50 text-slate-700 font-medium flex items-center gap-2.5 transition"
+              >
+                <span>💾</span> <span>匯出 JSON 備份</span>
+              </button>
+              <label
+                class="w-full px-3.5 py-2.5 text-left hover:bg-ice/50 text-slate-700 font-medium flex items-center gap-2.5 transition cursor-pointer"
+              >
+                <span>📂</span> <span>匯入 JSON 備份</span>
+                <input type="file" id="importFileInput" accept=".json" class="hidden" onchange="importData(event); closeMoreMenu();" />
+              </label>
+              <div class="my-1 border-t border-slate-100"></div>
+              <button
+                type="button"
+                onclick="closeMoreMenu(); openResetConfirm();"
+                class="w-full px-3.5 py-2.5 text-left hover:bg-rose-50 text-rose-600 font-medium flex items-center gap-2.5 transition"
+              >
+                <span>↺</span> <span>重設回預設行程</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Mini Dashboard Stats Strip -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-5 pt-4 border-t border-slate-200/70">
-        <div class="bg-white/75 rounded-2xl p-3 border border-white">
+      <!-- Mini Dashboard Stats Strip (Compact on Mobile, 4-col on Desktop) -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5 mt-4 pt-3.5 border-t border-slate-200/70">
+        <div class="bg-white/75 rounded-2xl p-2.5 sm:p-3 border border-white">
           <div class="text-[11px] text-slate-500">總行程天數</div>
-          <div class="font-display text-lg font-bold text-slateink mt-0.5" id="statDayCount">15 天 14 夜</div>
+          <div class="font-display text-base sm:text-lg font-bold text-slateink mt-0.5" id="statDayCount">15 天 14 夜</div>
           <div class="text-[11px] text-pine" id="statItemCount">共 0 個行程項目</div>
         </div>
-        <div class="bg-white/75 rounded-2xl p-3 border border-white">
+        <div class="bg-white/75 rounded-2xl p-2.5 sm:p-3 border border-white">
           <div class="text-[11px] text-slate-500">待預約提醒</div>
-          <div class="font-display text-lg font-bold text-warmwood mt-0.5" id="statPendingCount">0 項待處理</div>
+          <div class="font-display text-base sm:text-lg font-bold text-warmwood mt-0.5" id="statPendingCount">0 項待處理</div>
           <div class="text-[11px] text-slate-500 truncate" id="statNextReminder">尚無搶票提醒</div>
         </div>
-        <div class="bg-white/75 rounded-2xl p-3 border border-white">
+        <div class="bg-white/75 rounded-2xl p-2.5 sm:p-3 border border-white">
           <div class="text-[11px] text-slate-500">已記錄總支出</div>
-          <div class="font-display text-lg font-bold text-slateink mt-0.5" id="statTotalSpent">NT$ 0</div>
+          <div class="font-display text-base sm:text-lg font-bold text-slateink mt-0.5" id="statTotalSpent">NT$ 0</div>
           <div class="text-[11px] text-slate-500" id="statBudgetLimitText">預算上限 NT$ 80,000</div>
         </div>
-        <div class="bg-white/75 rounded-2xl p-3 border border-white">
+        <div class="bg-white/75 rounded-2xl p-2.5 sm:p-3 border border-white">
           <div class="text-[11px] text-slate-500">剩餘預算空間</div>
-          <div class="font-display text-lg font-bold text-emerald-700 mt-0.5" id="statRemaining">NT$ 80,000</div>
+          <div class="font-display text-base sm:text-lg font-bold text-emerald-700 mt-0.5" id="statRemaining">NT$ 80,000</div>
           <div class="w-full bg-slate-200/80 h-1.5 rounded-full mt-1.5 overflow-hidden">
             <div id="statBudgetBar" class="bg-pine h-full rounded-full transition-all duration-500" style="width: 0%"></div>
           </div>
@@ -316,21 +373,21 @@
       </div>
     </header>
 
-    <!-- Main Navigation Tabs -->
-    <nav class="glass-card rounded-2xl p-1.5 mb-5 flex gap-1.5 overflow-x-auto no-scrollbar sticky top-2 z-30">
-      <button onclick="switchTab('itinerary')" id="tab-itinerary" class="tab-btn flex-1 min-w-[96px] py-2.5 px-3 rounded-xl text-sm font-bold transition flex items-center justify-center gap-1.5">
+    <!-- Desktop Top Navigation Tabs (Hidden on Mobile, replaced by App Bottom Bar) -->
+    <nav class="hidden sm:flex glass-card rounded-2xl p-1.5 mb-5 gap-1.5 sticky top-2 z-30">
+      <button onclick="switchTab('itinerary')" data-tab="itinerary" class="tab-btn flex-1 py-2.5 px-3 rounded-xl text-sm font-bold transition flex items-center justify-center gap-1.5">
         <span>📅</span> 每日行程
       </button>
-      <button onclick="switchTab('transport')" id="tab-transport" class="tab-btn flex-1 min-w-[96px] py-2.5 px-3 rounded-xl text-sm font-bold transition flex items-center justify-center gap-1.5">
+      <button onclick="switchTab('transport')" data-tab="transport" class="tab-btn flex-1 py-2.5 px-3 rounded-xl text-sm font-bold transition flex items-center justify-center gap-1.5">
         <span>🚅</span> 交通預約
       </button>
-      <button onclick="switchTab('hotels')" id="tab-hotels" class="tab-btn flex-1 min-w-[96px] py-2.5 px-3 rounded-xl text-sm font-bold transition flex items-center justify-center gap-1.5">
+      <button onclick="switchTab('hotels')" data-tab="hotels" class="tab-btn flex-1 py-2.5 px-3 rounded-xl text-sm font-bold transition flex items-center justify-center gap-1.5">
         <span>🏨</span> 飯店整理
       </button>
-      <button onclick="switchTab('expenses')" id="tab-expenses" class="tab-btn flex-1 min-w-[96px] py-2.5 px-3 rounded-xl text-sm font-bold transition flex items-center justify-center gap-1.5">
+      <button onclick="switchTab('expenses')" data-tab="expenses" class="tab-btn flex-1 py-2.5 px-3 rounded-xl text-sm font-bold transition flex items-center justify-center gap-1.5">
         <span>💸</span> 支出統計
       </button>
-      <button onclick="switchTab('phrases')" id="tab-phrases" class="tab-btn flex-1 min-w-[96px] py-2.5 px-3 rounded-xl text-sm font-bold transition flex items-center justify-center gap-1.5">
+      <button onclick="switchTab('phrases')" data-tab="phrases" class="tab-btn flex-1 py-2.5 px-3 rounded-xl text-sm font-bold transition flex items-center justify-center gap-1.5">
         <span>🗣️</span> 實用會話
       </button>
     </nav>
@@ -339,22 +396,32 @@
     <section id="view-itinerary" class="space-y-4">
       <!-- Search, Category Keywords Filter & Controls -->
       <div class="glass-card rounded-2xl p-4 space-y-3">
-        <!-- Editable Itinerary Section Title -->
-        <div class="pb-2 border-b border-slate-200/70">
-          <h2
-            data-setting-key="itineraryTitle"
-            data-required="true"
-            contenteditable="true" spellcheck="false" onblur="saveSectionText(this)" onkeydown="handleHeaderKeydown(event)"
-            title="點擊直接編輯標題"
-            class="font-display text-base sm:text-lg font-bold text-slateink rounded-lg px-1.5 -mx-1.5 py-0.5 hover:bg-white/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-pine/40 transition cursor-text"
-          >📅 15 天行程總表</h2>
-          <p
-            data-setting-key="itineraryDesc"
-            data-placeholder="點這裡輸入行程總表說明（可留白）"
-            contenteditable="true" spellcheck="false" onblur="saveSectionText(this)" onkeydown="handleHeaderKeydown(event)"
-            title="點擊直接編輯說明"
-            class="text-xs text-slate-500 mt-0.5 rounded-lg px-1.5 -mx-1.5 py-0.5 hover:bg-white/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-pine/40 transition cursor-text"
-          >點標題可直接修改；每一天的大標按「編輯」修改，最下方可新增天數。</p>
+        <!-- Editable Itinerary Section Title + Jump to Today Button -->
+        <div class="pb-2 border-b border-slate-200/70 flex items-start justify-between gap-2">
+          <div>
+            <h2
+              data-setting-key="itineraryTitle"
+              data-required="true"
+              contenteditable="true" spellcheck="false" onblur="saveSectionText(this)" onkeydown="handleHeaderKeydown(event)"
+              title="點擊直接編輯標題"
+              class="font-display text-base sm:text-lg font-bold text-slateink rounded-lg px-1.5 -mx-1.5 py-0.5 hover:bg-white/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-pine/40 transition cursor-text"
+            >📅 15 天行程總表</h2>
+            <p
+              data-setting-key="itineraryDesc"
+              data-placeholder="點這裡輸入行程總表說明（可留白）"
+              contenteditable="true" spellcheck="false" onblur="saveSectionText(this)" onkeydown="handleHeaderKeydown(event)"
+              title="點擊直接編輯說明"
+              class="text-xs text-slate-500 mt-0.5 rounded-lg px-1.5 -mx-1.5 py-0.5 hover:bg-white/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-pine/40 transition cursor-text"
+            >點標題可直接修改；每一天的大標按「編輯」修改，最下方可新增天數。</p>
+          </div>
+          <button
+            type="button"
+            onclick="scrollToToday(true)"
+            class="px-3 py-1.5 rounded-xl bg-hearth/20 hover:bg-hearth/30 text-warmwood border border-hearth/40 text-xs font-bold transition flex items-center gap-1 shrink-0 shadow-xs"
+            title="展開並平滑捲動到今天（或出發首日）"
+          >
+            <span>📍</span> <span>跳到今天</span>
+          </button>
         </div>
         <div class="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center justify-between">
           <div class="relative flex-1">
@@ -448,6 +515,16 @@
       </div>
 
       <!-- Transport Cards Container -->
+      <div class="glass-card rounded-2xl p-4 space-y-2">
+        <div class="flex items-center justify-between text-xs">
+          <span class="font-bold text-slateink flex items-center gap-1.5">🚅 交通票券預約進度</span>
+          <span id="transportProgressText" class="font-bold text-pine">已訂 0 / 0 項 (0%)</span>
+        </div>
+        <div class="w-full h-2 rounded-full bg-slate-200/80 overflow-hidden">
+          <div id="transportProgressBar" class="h-full rounded-full bg-emerald-600 transition-all duration-500" style="width: 0%"></div>
+        </div>
+      </div>
+
       <div id="transportList" class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
         <!-- Dynamically rendered -->
       </div>
@@ -455,26 +532,39 @@
 
     <!-- ==================== TAB 3: HOTELS ==================== -->
     <section id="view-hotels" class="hidden space-y-4">
-      <div class="glass-card rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h2
-            data-setting-key="hotelTitle"
-            data-required="true"
-            contenteditable="true" spellcheck="false" onblur="saveSectionText(this)" onkeydown="handleHeaderKeydown(event)"
-            title="點擊直接編輯標題"
-            class="font-display text-base sm:text-lg font-bold text-slateink rounded-lg px-1.5 -mx-1.5 py-0.5 hover:bg-white/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-pine/40 transition cursor-text"
-          >🏨 14 晚住宿與行李策略整理</h2>
-          <p
-            data-setting-key="hotelDesc"
-            data-placeholder="點這裡輸入住宿說明（可留白）"
-            contenteditable="true" spellcheck="false" onblur="saveSectionText(this)" onkeydown="handleHeaderKeydown(event)"
-            title="點擊直接編輯說明"
-            class="text-xs sm:text-sm text-slate-600 mt-1 rounded-lg px-1.5 -mx-1.5 py-0.5 hover:bg-white/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-pine/40 transition cursor-text"
-          >名古屋前 1 晚＋後 5 晚訂同一間站前商旅！1/12–1/20 上山期間可先寫信確認飯店能否寄放大行李（或用宅急便指定日期寄回），最後連住 5 晚超舒服。</p>
+      <div class="glass-card rounded-2xl p-4 sm:p-5 space-y-3.5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2
+              data-setting-key="hotelTitle"
+              data-required="true"
+              contenteditable="true" spellcheck="false" onblur="saveSectionText(this)" onkeydown="handleHeaderKeydown(event)"
+              title="點擊直接編輯標題"
+              class="font-display text-base sm:text-lg font-bold text-slateink rounded-lg px-1.5 -mx-1.5 py-0.5 hover:bg-white/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-pine/40 transition cursor-text"
+            >🏨 14 晚住宿與行李策略整理</h2>
+            <p
+              data-setting-key="hotelDesc"
+              data-placeholder="點這裡輸入住宿說明（可留白）"
+              contenteditable="true" spellcheck="false" onblur="saveSectionText(this)" onkeydown="handleHeaderKeydown(event)"
+              title="點擊直接編輯說明"
+              class="text-xs sm:text-sm text-slate-600 mt-1 rounded-lg px-1.5 -mx-1.5 py-0.5 hover:bg-white/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-pine/40 transition cursor-text"
+            >名古屋前 1 晚＋後 5 晚訂同一間站前商旅！1/12–1/20 上山期間可先寫信確認飯店能否寄放大行李（或用宅急便指定日期寄回），最後連住 5 晚超舒服。</p>
+          </div>
+          <button onclick="openHotelModal()" class="px-4 py-2.5 rounded-xl bg-pine hover:bg-slateink text-white text-xs sm:text-sm font-bold shadow-sm transition whitespace-nowrap">
+            ＋ 新增飯店
+          </button>
         </div>
-        <button onclick="openHotelModal()" class="px-4 py-2.5 rounded-xl bg-pine hover:bg-slateink text-white text-xs sm:text-sm font-bold shadow-sm transition whitespace-nowrap">
-          ＋ 新增飯店
-        </button>
+
+        <!-- Hotel Booking Progress Bar -->
+        <div class="pt-3 border-t border-slate-200/70 space-y-1.5">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold text-slateink flex items-center gap-1.5">🏨 住宿訂房完成度</span>
+            <span id="hotelProgressText" class="font-bold text-pine">已訂 0 / 0 間 (0%)</span>
+          </div>
+          <div class="w-full h-2 rounded-full bg-slate-200/80 overflow-hidden">
+            <div id="hotelProgressBar" class="h-full rounded-full bg-emerald-600 transition-all duration-500" style="width: 0%"></div>
+          </div>
+        </div>
       </div>
 
       <div id="hotelList" class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
@@ -1045,14 +1135,40 @@
   </div>
 
   <!-- Toast Notification -->
-  <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-full bg-slateink text-white text-xs sm:text-sm font-medium shadow-lg opacity-0 pointer-events-none transition-opacity duration-300">
+  <div id="toast" class="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-full bg-slateink text-white text-xs sm:text-sm font-medium shadow-lg opacity-0 pointer-events-none transition-opacity duration-300 whitespace-nowrap">
     已儲存變更
   </div>
 
-  <!-- Signature Watermark (70% opacity) -->
-  <div aria-hidden="true" class="fixed bottom-3 right-3 sm:bottom-4 sm:right-5 z-40 pointer-events-none select-none opacity-70 px-3.5 py-1.5 rounded-full bg-white/90 backdrop-blur-md border border-white shadow-sm text-[11px] sm:text-xs font-display font-bold text-slateink tracking-wide">
+  <!-- Signature Watermark (70% opacity, shifted above mobile bottom bar) -->
+  <div aria-hidden="true" class="fixed bottom-20 sm:bottom-4 right-3 sm:right-5 z-40 pointer-events-none select-none opacity-70 px-3 py-1 rounded-full bg-white/90 backdrop-blur-md border border-white shadow-sm text-[10px] sm:text-xs font-display font-bold text-slateink tracking-wide">
     ✨by段嘟米🐹🐾
   </div>
+
+  <!-- Mobile Fixed Bottom Navigation Bar (App Style) -->
+  <nav aria-label="手機版底部導覽列" class="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-white/88 backdrop-blur-xl border-t border-slate-200/80 shadow-[0_-6px_24px_rgba(45,58,69,0.08)] px-1.5 pt-1.5 pb-safe">
+    <div class="grid grid-cols-5 gap-1">
+      <button onclick="switchTab('itinerary')" data-tab="itinerary" class="tab-btn-mobile flex flex-col items-center justify-center py-1.5 rounded-xl text-[11px] font-bold transition">
+        <span class="text-base leading-none mb-1">📅</span>
+        <span>行程</span>
+      </button>
+      <button onclick="switchTab('transport')" data-tab="transport" class="tab-btn-mobile flex flex-col items-center justify-center py-1.5 rounded-xl text-[11px] font-bold transition">
+        <span class="text-base leading-none mb-1">🚅</span>
+        <span>交通</span>
+      </button>
+      <button onclick="switchTab('hotels')" data-tab="hotels" class="tab-btn-mobile flex flex-col items-center justify-center py-1.5 rounded-xl text-[11px] font-bold transition">
+        <span class="text-base leading-none mb-1">🏨</span>
+        <span>飯店</span>
+      </button>
+      <button onclick="switchTab('expenses')" data-tab="expenses" class="tab-btn-mobile flex flex-col items-center justify-center py-1.5 rounded-xl text-[11px] font-bold transition">
+        <span class="text-base leading-none mb-1">💸</span>
+        <span>支出</span>
+      </button>
+      <button onclick="switchTab('phrases')" data-tab="phrases" class="tab-btn-mobile flex flex-col items-center justify-center py-1.5 rounded-xl text-[11px] font-bold transition">
+        <span class="text-base leading-none mb-1">🗣️</span>
+        <span>會話</span>
+      </button>
+    </div>
+  </nav>
 
   <!-- ==================== JAVASCRIPT LOGIC ==================== -->
   <script>
@@ -1087,6 +1203,14 @@
       '傍晚': 'bg-amber-50 text-amber-700',
       '晚上': 'bg-indigo-50 text-indigo-700',
       '彈性': 'bg-slate-100 text-slate-600'
+    };
+
+    const TIMESLOT_TIMELINE = {
+      '早上': { dot: 'bg-amber-400 ring-amber-100', text: 'text-amber-700', label: '早上' },
+      '下午': { dot: 'bg-sky-500 ring-sky-100', text: 'text-sky-700', label: '下午' },
+      '傍晚': { dot: 'bg-orange-400 ring-orange-100', text: 'text-orange-700', label: '傍晚' },
+      '晚上': { dot: 'bg-indigo-500 ring-indigo-100', text: 'text-indigo-700', label: '晚上' },
+      '彈性': { dot: 'bg-slate-400 ring-slate-100', text: 'text-slate-600', label: '彈性' }
     };
 
     const TIMESLOT_ORDER = {
@@ -1443,18 +1567,91 @@
     function switchTab(tabName) {
       ['itinerary', 'transport', 'hotels', 'expenses', 'phrases'].forEach(name => {
         const view = document.getElementById(`view-${name}`);
-        const btn = document.getElementById(`tab-${name}`);
         if (view) view.classList.toggle('hidden', name !== tabName);
-        if (btn) {
-          if (name === tabName) {
-            btn.classList.add('bg-pine', 'text-white', 'shadow-sm');
-            btn.classList.remove('text-slate-600', 'hover:bg-white/70');
-          } else {
-            btn.classList.remove('bg-pine', 'text-white', 'shadow-sm');
-            btn.classList.add('text-slate-600', 'hover:bg-white/70');
-          }
+      });
+
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        const isActive = btn.dataset.tab === tabName;
+        if (isActive) {
+          btn.classList.add('bg-pine', 'text-white', 'shadow-sm');
+          btn.classList.remove('text-slate-600', 'hover:bg-white/70');
+        } else {
+          btn.classList.remove('bg-pine', 'text-white', 'shadow-sm');
+          btn.classList.add('text-slate-600', 'hover:bg-white/70');
         }
       });
+
+      document.querySelectorAll('.tab-btn-mobile').forEach(btn => {
+        const isActive = btn.dataset.tab === tabName;
+        if (isActive) {
+          btn.classList.add('bg-pine/12', 'text-pine');
+          btn.classList.remove('text-slate-500');
+        } else {
+          btn.classList.remove('bg-pine/12', 'text-pine');
+          btn.classList.add('text-slate-500');
+        }
+      });
+    }
+
+    // ==================== MORE MENU & TODAY FOCUS HELPERS ====================
+    function toggleMoreMenu(e) {
+      if (e) e.stopPropagation();
+      const dd = document.getElementById('moreMenuDropdown');
+      if (dd) dd.classList.toggle('hidden');
+    }
+
+    function closeMoreMenu() {
+      const dd = document.getElementById('moreMenuDropdown');
+      if (dd) dd.classList.add('hidden');
+    }
+
+    document.addEventListener('click', (e) => {
+      const wrapper = document.getElementById('moreMenuWrapper');
+      if (wrapper && !wrapper.contains(e.target)) {
+        closeMoreMenu();
+      }
+    });
+
+    function getLocalTodayISO() {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    }
+
+    function getTodayMatchingDayNum() {
+      const todayISO = getLocalTodayISO();
+      const match = appData.daysMeta.find(d => d.isoDate === todayISO);
+      return match ? Number(match.day) : null;
+    }
+
+    function scrollToToday(showFeedback = false) {
+      switchTab('itinerary');
+      const todayDay = getTodayMatchingDayNum();
+      const targetDay = todayDay || (appData.daysMeta[0] ? Number(appData.daysMeta[0].day) : 1);
+
+      if (!appData.expandedDays.some(d => Number(d) === targetDay)) {
+        appData.expandedDays.push(targetDay);
+        persistData();
+        renderItinerary();
+      }
+
+      requestAnimationFrame(() => {
+        const el = document.getElementById(`day-card-${targetDay}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        if (showFeedback) {
+          showToast(todayDay
+            ? `📍 已跳至今日行程（DAY ${todayDay}）`
+            : `📅 目前尚未出發，已為你展開 DAY ${targetDay}`);
+        }
+      });
+    }
+
+    function buildGoogleMapsUrl(locationStr) {
+      const trimmed = (locationStr || '').trim();
+      if (!trimmed) return '';
+      if (/^https?:\/\//i.test(trimmed)) return trimmed;
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(trimmed)}`;
     }
 
     // ==================== EDITABLE HERO HEADER & SECTION TEXTS ====================
@@ -1673,11 +1870,13 @@
       const statusFilter = document.getElementById('statusFilterSelect')?.value || 'ALL';
       const isFiltering = currentCategoryFilter !== '全部' || statusFilter !== 'ALL' || keyword.length > 0;
       const hasSortable = typeof Sortable !== 'undefined';
+      const todayDayNum = getTodayMatchingDayNum();
 
       const dc = document.getElementById('statDayCount');
       if (dc) dc.textContent = `${appData.daysMeta.length} 天 ${Math.max(0, appData.daysMeta.length - 1)} 夜`;
       const html = appData.daysMeta.map(meta => {
         const dayNum = Number(meta.day);
+        const isToday = todayDayNum === dayNum;
         const dayItemsAll = appData.itinerary.filter(item => Number(item.day) === dayNum);
         const filteredItems = dayItemsAll.filter(item => {
           if (currentCategoryFilter !== '全部' && item.category !== currentCategoryFilter) return false;
@@ -1698,18 +1897,19 @@
         const badgeCls = DAY_BADGE_COLORS[colorKey].badgeCls;
 
         return `
-          <div class="day-card-wrapper glass-card rounded-2xl border border-white/90" data-day-num="${dayNum}">
+          <div id="day-card-${dayNum}" class="day-card-wrapper glass-card rounded-2xl border ${isToday ? 'border-hearth today-glow-card' : 'border-white/90'} scroll-mt-4 sm:scroll-mt-20" data-day-num="${dayNum}">
             <!-- Sticky Day Accordion Header -->
             <div
               onclick="toggleDay(${dayNum})"
-              class="day-sticky-header bg-white/95 backdrop-blur-md px-3 sm:px-4 py-3.5 ${isExpanded ? 'rounded-t-2xl border-b border-slate-200/70' : 'rounded-2xl'} flex flex-col sm:flex-row sm:items-center justify-between gap-2 cursor-pointer hover:bg-snow/95 transition shadow-sm"
+              class="day-sticky-header ${isToday ? 'bg-[#FFFBF4]/95' : 'bg-white/95'} backdrop-blur-md px-3 sm:px-4 py-3.5 ${isExpanded ? 'rounded-t-2xl border-b border-slate-200/70' : 'rounded-2xl'} flex flex-col sm:flex-row sm:items-center justify-between gap-2 cursor-pointer hover:bg-snow/95 transition shadow-sm"
             >
-              <div class="flex items-center gap-2 min-w-0">
+              <div class="flex items-center gap-2 min-w-0 flex-wrap sm:flex-nowrap">
                 ${!isFiltering && hasSortable ? `
                   <div onclick="event.stopPropagation()" class="day-drag-handle drag-handle px-1 text-slate-300 hover:text-pine text-base leading-none shrink-0" title="按住拖曳調整整天順序">⋮⋮</div>
                 ` : ''}
                 <span class="text-slate-400 text-xs transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}">▶</span>
                 <span class="${badgeCls} font-display text-xs font-bold px-2.5 py-1 rounded-lg shrink-0 shadow-xs">${escapeHtml(meta.label || 'DAY ' + dayNum)}</span>
+                ${isToday ? `<span class="px-2 py-0.5 rounded-full bg-gradient-to-r from-warmwood to-hearth text-white text-[10px] font-display font-bold tracking-wider shadow-xs animate-pulse shrink-0">✨ TODAY</span>` : ''}
                 <span class="text-xs font-bold text-slate-600 shrink-0">${escapeHtml(meta.date)}</span>
                 <span class="px-2 py-0.5 rounded-full bg-ice/80 text-pine text-[11px] font-bold shrink-0">${escapeHtml(meta.city)}</span>
                 <span class="text-xs text-slate-500 truncate hidden md:inline">${escapeHtml(meta.theme)}</span>
@@ -1742,7 +1942,7 @@
                 <div class="text-xs text-slate-500 md:hidden pb-1 border-b border-slate-100">
                   ${escapeHtml(meta.theme)}
                 </div>
-                <div class="day-items-container space-y-2 min-h-[12px]" data-day="${dayNum}">
+                <div class="day-items-container space-y-0 min-h-[12px]" data-day="${dayNum}">
                   ${filteredItems.length === 0 ? `
                     <div class="text-center py-5 text-xs text-slate-400 bg-white/50 rounded-xl border border-dashed border-slate-200">
                       這一天還沒有行程，點右上角「＋新增」加入安排吧！
@@ -1750,50 +1950,71 @@
                   ` : filteredItems.map((item, idx) => {
                     const catMeta = CATEGORIES[item.category] || CATEGORIES['景點'];
                     const statusCls = STATUS_STYLES[item.status] || 'bg-slate-100 text-slate-600';
-                    const slotCls = TIMESLOT_STYLES[item.timeSlot] || 'bg-slate-100 text-slate-600';
-                    const locIsUrl = /^https?:\/\//i.test(item.location || '');
+                    const tlMeta = TIMESLOT_TIMELINE[item.timeSlot] || TIMESLOT_TIMELINE['彈性'];
+                    const isFirst = idx === 0;
+                    const isLast = idx === filteredItems.length - 1;
+                    const mapsUrl = buildGoogleMapsUrl(item.location);
                     return `
-                      <div class="itinerary-item-card bg-white/90 hover:bg-white rounded-xl p-3 border border-slate-200/75 shadow-sm flex items-start gap-2.5 transition" data-id="${item.id}">
-                        <!-- Drag Handle or Fallback Step Buttons -->
-                        ${!isFiltering ? (hasSortable ? `
-                          <div class="drag-handle pt-1 px-1 text-slate-300 hover:text-pine text-base leading-none shrink-0" title="按住拖曳調整順序">⋮⋮</div>
-                        ` : `
-                          <div class="flex flex-col gap-0.5 shrink-0">
-                            <button type="button" onclick="moveItemStep('${item.id}', -1)" ${idx === 0 ? 'disabled' : ''} class="text-[10px] px-1 py-0.5 rounded bg-snow border border-slate-200 text-slate-500 disabled:opacity-30">↑</button>
-                            <button type="button" onclick="moveItemStep('${item.id}', 1)" ${idx === filteredItems.length - 1 ? 'disabled' : ''} class="text-[10px] px-1 py-0.5 rounded bg-snow border border-slate-200 text-slate-500 disabled:opacity-30">↓</button>
+                      <div class="itinerary-item-card group relative flex items-stretch gap-2 sm:gap-3 ${isLast ? '' : 'pb-2.5'}" data-id="${item.id}">
+                        <!-- Left Vertical Timeline Track (Dot + Connecting Line + Time Label) -->
+                        <div class="w-11 sm:w-12 shrink-0 flex flex-col items-center relative select-none">
+                          ${!isFirst ? `<div class="w-0.5 h-3.5 bg-slate-200/90"></div>` : `<div class="h-3.5"></div>`}
+                          <div class="w-2.5 h-2.5 rounded-full ${tlMeta.dot} ring-4 shrink-0 z-10"></div>
+                          <span class="text-[10px] font-bold ${tlMeta.text} mt-1 leading-none">${escapeHtml(tlMeta.label)}</span>
+                          ${!isLast ? `<div class="w-0.5 flex-1 bg-slate-200/90 mt-1"></div>` : ''}
+                        </div>
+
+                        <!-- Main Card Body -->
+                        <div class="flex-1 min-w-0 bg-white/92 hover:bg-white rounded-xl p-3 border border-slate-200/80 shadow-xs flex items-start gap-2 transition">
+                          <!-- Drag Handle or Fallback Step Buttons -->
+                          ${!isFiltering ? (hasSortable ? `
+                            <div class="drag-handle pt-0.5 px-0.5 text-slate-300 hover:text-pine text-base leading-none shrink-0" title="按住拖曳調整順序">⋮⋮</div>
+                          ` : `
+                            <div class="flex flex-col gap-0.5 shrink-0">
+                              <button type="button" onclick="moveItemStep('${item.id}', -1)" ${isFirst ? 'disabled' : ''} class="text-[10px] px-1 py-0.5 rounded bg-snow border border-slate-200 text-slate-500 disabled:opacity-30">↑</button>
+                              <button type="button" onclick="moveItemStep('${item.id}', 1)" ${isLast ? 'disabled' : ''} class="text-[10px] px-1 py-0.5 rounded bg-snow border border-slate-200 text-slate-500 disabled:opacity-30">↓</button>
+                            </div>
+                          `) : ''}
+
+                          <div class="flex-1 min-w-0 space-y-1.5">
+                            <div class="flex items-start justify-between gap-2">
+                              <div class="flex items-center flex-wrap gap-1.5">
+                                <span class="px-2 py-0.5 rounded-md text-[11px] font-bold border ${catMeta.bg} ${catMeta.text} ${catMeta.border}">${catMeta.icon} ${escapeHtml(item.category)}</span>
+                                <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${statusCls}">${escapeHtml(item.status)}</span>
+                              </div>
+                              <div class="flex items-center gap-1 shrink-0">
+                                <button type="button" onclick="openItemModal('${item.id}')" class="px-2 py-1 rounded-lg bg-snow hover:bg-ice/60 border border-slate-200 text-xs font-medium text-slate-600" title="編輯行程">編輯</button>
+                                <button type="button" onclick="confirmDelete('itinerary', '${item.id}', '${escapeHtml(item.title)}')" class="px-2 py-1 rounded-lg bg-snow hover:bg-rose-50 border border-slate-200 text-xs text-rose-600" title="刪除行程">🗑️</button>
+                              </div>
+                            </div>
+
+                            <div class="font-bold text-sm text-slateink leading-snug">${escapeHtml(item.title)}</div>
+
+                            ${item.location ? `
+                              <div class="text-xs text-slate-500 flex items-center flex-wrap gap-1.5">
+                                <span class="inline-flex items-center gap-1 min-w-0">
+                                  <span>📍</span>
+                                  <span class="truncate max-w-[200px] sm:max-w-xs">${escapeHtml(item.location)}</span>
+                                </span>
+                                <a
+                                  href="${escapeHtml(mapsUrl)}"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onclick="event.stopPropagation()"
+                                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200/80 text-[11px] font-bold transition shrink-0"
+                                  title="在 Google Maps 開啟導航"
+                                >
+                                  <span>🧭</span><span>地圖</span>
+                                </a>
+                              </div>
+                            ` : ''}
+
+                            ${item.notes ? `
+                              <div class="text-xs text-slate-600 bg-snow/90 rounded-lg px-2.5 py-1.5 border border-slate-100 leading-relaxed">
+                                ${escapeHtml(item.notes)}
+                              </div>
+                            ` : ''}
                           </div>
-                        `) : ''}
-
-                        <div class="flex-1 min-w-0 space-y-1.5">
-                          <div class="flex items-start justify-between gap-2">
-                            <div class="flex items-center flex-wrap gap-1.5">
-                              <span class="px-2 py-0.5 rounded-md text-[11px] font-bold ${slotCls}">${escapeHtml(item.timeSlot)}</span>
-                              <span class="px-2 py-0.5 rounded-md text-[11px] font-bold border ${catMeta.bg} ${catMeta.text} ${catMeta.border}">${catMeta.icon} ${escapeHtml(item.category)}</span>
-                              <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${statusCls}">${escapeHtml(item.status)}</span>
-                            </div>
-                            <div class="flex items-center gap-1 shrink-0">
-                              <button type="button" onclick="openItemModal('${item.id}')" class="px-2 py-1 rounded-lg bg-snow hover:bg-ice/60 border border-slate-200 text-xs font-medium text-slate-600" title="編輯行程">編輯</button>
-                              <button type="button" onclick="confirmDelete('itinerary', '${item.id}', '${escapeHtml(item.title)}')" class="px-2 py-1 rounded-lg bg-snow hover:bg-rose-50 border border-slate-200 text-xs text-rose-600" title="刪除行程">🗑️</button>
-                            </div>
-                          </div>
-
-                          <div class="font-bold text-sm text-slateink">${escapeHtml(item.title)}</div>
-
-                          ${item.location ? `
-                            <div class="text-xs text-slate-500 flex items-center gap-1 break-all">
-                              <span>📍</span>
-                              ${locIsUrl
-                                ? `<a href="${escapeHtml(item.location)}" target="_blank" rel="noopener noreferrer" class="text-pine underline hover:text-slateink">${escapeHtml(item.location)}</a>`
-                                : `<span>${escapeHtml(item.location)}</span>`
-                              }
-                            </div>
-                          ` : ''}
-
-                          ${item.notes ? `
-                            <div class="text-xs text-slate-600 bg-snow/90 rounded-lg px-2.5 py-1.5 border border-slate-100 leading-relaxed">
-                              ${escapeHtml(item.notes)}
-                            </div>
-                          ` : ''}
                         </div>
                       </div>
                     `;
@@ -2066,6 +2287,15 @@
       const listEl = document.getElementById('transportList');
       if (!listEl) return;
 
+      // Update Transport Booking Progress Bar
+      const totalTr = appData.transports.length;
+      const doneTr = appData.transports.filter(t => t.status === '已預約' || t.status === '現場購票').length;
+      const pctTr = totalTr > 0 ? Math.round((doneTr / totalTr) * 100) : 0;
+      const trTextEl = document.getElementById('transportProgressText');
+      const trBarEl = document.getElementById('transportProgressBar');
+      if (trTextEl) trTextEl.textContent = `已確認 ${doneTr} / ${totalTr} 項 (${pctTr}%)`;
+      if (trBarEl) trBarEl.style.width = `${pctTr}%`;
+
       const typeIcons = {
         '航班': '✈️',
         'JR/新幹線': '🚅',
@@ -2109,6 +2339,15 @@
       const listEl = document.getElementById('hotelList');
       if (!listEl) return;
 
+      // Update Hotel Booking Progress Bar
+      const totalHt = appData.hotels.length;
+      const doneHt = appData.hotels.filter(h => h.status === '已預約' || h.status === '已付款').length;
+      const pctHt = totalHt > 0 ? Math.round((doneHt / totalHt) * 100) : 0;
+      const htTextEl = document.getElementById('hotelProgressText');
+      const htBarEl = document.getElementById('hotelProgressBar');
+      if (htTextEl) htTextEl.textContent = `已訂 ${doneHt} / ${totalHt} 間 (${pctHt}%)`;
+      if (htBarEl) htBarEl.style.width = `${pctHt}%`;
+
       if (appData.hotels.length === 0) {
         listEl.innerHTML = `<div class="md:col-span-2 glass-card rounded-2xl p-8 text-center text-sm text-slate-400">尚未新增任何飯店資訊</div>`;
         return;
@@ -2116,6 +2355,7 @@
 
       listEl.innerHTML = appData.hotels.map(ht => {
         const statusCls = STATUS_STYLES[ht.status] || 'bg-slate-100 text-slate-600';
+        const htMapsUrl = buildGoogleMapsUrl(ht.address || ht.name);
         return `
           <div class="glass-card rounded-2xl p-4 flex flex-col justify-between gap-3">
             <div class="space-y-2">
@@ -2128,7 +2368,14 @@
                 <span>📅 ${escapeHtml(ht.dates)}</span>
                 ${ht.price ? `<span class="font-bold text-warmwood">NT$ ${Number(ht.price).toLocaleString()}</span>` : ''}
               </div>
-              ${ht.address ? `<div class="text-xs text-slate-500">📍 ${escapeHtml(ht.address)}</div>` : ''}
+              ${ht.address ? `
+                <div class="text-xs text-slate-500 flex items-center flex-wrap gap-1.5">
+                  <span>📍 ${escapeHtml(ht.address)}</span>
+                  <a href="${escapeHtml(htMapsUrl)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200/80 text-[11px] font-bold transition">
+                    <span>🧭</span><span>地圖</span>
+                  </a>
+                </div>
+              ` : ''}
               ${ht.notes ? `<div class="text-xs text-slate-600 bg-white/80 rounded-xl p-2.5 border border-slate-100">${escapeHtml(ht.notes)}</div>` : ''}
             </div>
             <div class="flex justify-end gap-2 pt-2 border-t border-slate-200/60">
@@ -3044,7 +3291,7 @@
 
     function toggleSnow() {
       snowEnabled = !snowEnabled;
-      document.getElementById('snowBtnText').textContent = snowEnabled ? '飄雪：開' : '飄雪：關';
+      document.getElementById('snowBtnText').textContent = snowEnabled ? '飄雪特效：開' : '飄雪特效：關';
     }
 
     // ==================== INITIALIZATION ====================
@@ -3069,6 +3316,10 @@
       animateSnow();
       renderAll();
       switchTab('itinerary');
+      // Auto-focus & scroll smoothly to Today if currently within trip dates
+      if (getTodayMatchingDayNum()) {
+        setTimeout(() => scrollToToday(false), 350);
+      }
       if (typeof window.initCloudSync === 'function') {
         window.initCloudSync();
       }
@@ -3081,16 +3332,15 @@
     import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getDatabase, ref, set, onValue, off } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
-    // 👇 請到 Firebase Console 專案設定複製你的 firebaseConfig 貼在這裡替換掉範例值（記得要有 databaseURL 喔！）
     const DEFAULT_FIREBASE_CONFIG = {
-  apiKey: "AIzaSyBEqlIYEmzzzi7jXDaTm_lsYDkoG0OWR5A",
-  authDomain: "nagoya-2d24a.firebaseapp.com",
-  databaseURL: "https://nagoya-2d24a-default-rtdb.firebaseio.com",
-  projectId: "nagoya-2d24a",
-  storageBucket: "nagoya-2d24a.firebasestorage.app",
-  messagingSenderId: "477175314245",
-  appId: "1:477175314245:web:5f4416d32752293e18f02c",
-  measurementId: "G-1816J1M6MQ"
+      apiKey: "AIzaSyBEqlIYEmzzzi7jXDaTm_lsYDkoG0OWR5A",
+      authDomain: "nagoya-2d24a.firebaseapp.com",
+      databaseURL: "https://nagoya-2d24a-default-rtdb.firebaseio.com",
+      projectId: "nagoya-2d24a",
+      storageBucket: "nagoya-2d24a.firebasestorage.app",
+      messagingSenderId: "477175314245",
+      appId: "1:477175314245:web:5f4416d32752293e18f02c",
+      measurementId: "G-1816J1M6MQ"
     };
 
     const firebaseConfig = typeof __firebase_config !== 'undefined'
@@ -3109,14 +3359,29 @@
       return firebaseConfig && firebaseConfig.apiKey && firebaseConfig.apiKey !== 'YOUR_API_KEY';
     }
 
-    function updateCloudUI(connected, code = '') {
+    function formatSyncClockTime() {
+      const now = new Date();
+      return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    }
+
+    function updateCloudUI(connected, code = '', syncSubLabel = '') {
       const btnText = document.getElementById('cloudSyncBtnText');
+      const lastSyncEl = document.getElementById('cloudLastSyncText');
+      const dotEl = document.getElementById('cloudStatusDot');
+      const pingEl = document.getElementById('cloudStatusPing');
       const statusDetail = document.getElementById('cloudStatusDetail');
       const logoutBtn = document.getElementById('cloudLogoutBtn');
       const inputEl = document.getElementById('syncCodeInput');
 
       if (connected && code) {
-        if (btnText) btnText.textContent = `已登入：${code}`;
+        if (btnText) btnText.textContent = code;
+        if (lastSyncEl) {
+          lastSyncEl.textContent = syncSubLabel || `● ${formatSyncClockTime()} 已同步`;
+          lastSyncEl.classList.remove('hidden');
+          lastSyncEl.className = 'text-[10px] font-bold text-emerald-600';
+        }
+        if (dotEl) dotEl.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500';
+        if (pingEl) pingEl.classList.remove('hidden');
         if (statusDetail) {
           statusDetail.textContent = `已連線至雲端同步碼「${code}」（即時自動同步中）`;
           statusDetail.className = 'font-bold text-emerald-700';
@@ -3124,7 +3389,14 @@
         if (logoutBtn) logoutBtn.classList.remove('hidden');
         if (inputEl) inputEl.value = code;
       } else {
-        if (btnText) btnText.textContent = '登入同步';
+        if (btnText) btnText.textContent = '☁️ 登入同步';
+        if (lastSyncEl) {
+          lastSyncEl.textContent = '僅儲存在本機';
+          lastSyncEl.classList.remove('hidden');
+          lastSyncEl.className = 'text-[10px] font-normal text-slate-400';
+        }
+        if (dotEl) dotEl.className = 'relative inline-flex rounded-full h-2.5 w-2.5 bg-slate-300';
+        if (pingEl) pingEl.classList.add('hidden');
         if (statusDetail) {
           statusDetail.textContent = isFirebaseConfigured()
             ? '尚未登入雲端（目前僅儲存在本機瀏覽器）'
@@ -3171,7 +3443,7 @@
 
         activeSyncCode = syncCode.trim();
         localStorage.setItem(SYNC_CODE_STORAGE, activeSyncCode);
-        updateCloudUI(true, activeSyncCode);
+        updateCloudUI(true, activeSyncCode, '● 連線中...');
 
         const dbRef = getTripDbRef(activeSyncCode);
         activeDbRef = dbRef;
@@ -3191,6 +3463,7 @@
               };
               localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
               renderAll();
+              updateCloudUI(true, activeSyncCode, `● ${formatSyncClockTime()} 已同步`);
               if (!firstLoadHandled) {
                 showToast(`☁️ 已載入雲端帳號「${activeSyncCode}」的最新行程！`);
               }
@@ -3205,7 +3478,8 @@
           firstLoadHandled = true;
         }, (err) => {
           console.error('雲端同步監聽失敗：', err);
-          showToast('雲端同步連線異常，請確認已開啟匿名登入與資料庫規則');
+          updateCloudUI(true, activeSyncCode, '⚠️ 離線暫存中');
+          showToast('雲端同步連線異常，請確認網路狀態');
         });
       } catch (err) {
         console.error('登入雲端失敗：', err);
@@ -3217,6 +3491,7 @@
       if (isApplyingRemoteUpdate && !force) return;
       if (!activeSyncCode || !isFirebaseConfigured()) return;
       try {
+        updateCloudUI(true, activeSyncCode, '● 同步中...');
         const user = await ensureAuthenticated();
         if (!user) return;
         const dbRef = getTripDbRef(activeSyncCode);
@@ -3225,8 +3500,10 @@
           updatedAt: new Date().toISOString(),
           updatedBy: user.uid
         });
+        updateCloudUI(true, activeSyncCode, `● ${formatSyncClockTime()} 已同步`);
       } catch (e) {
         console.error('上傳雲端失敗：', e);
+        updateCloudUI(true, activeSyncCode, '⚠️ 同步失敗');
       }
     };
 
