@@ -624,17 +624,22 @@
             <h3 class="font-display text-base font-bold text-slateink">支出明細</h3>
             <p class="text-[11px] text-slate-500">新增或編輯時自動依日期排序，也可按住左側「⋮⋮」自由拖曳調整順序</p>
           </div>
-          <select id="expenseCategoryFilter" onchange="renderExpenses()" class="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700">
-            <option value="ALL">全部分類</option>
-            <option value="機票">✈️ 機票</option>
-            <option value="住宿">🏨 住宿</option>
-            <option value="交通">🚅 交通</option>
-            <option value="滑雪">⛷️ 滑雪</option>
-            <option value="餐飲">🍜 餐飲</option>
-            <option value="門票與體驗">🎟️ 門票與體驗</option>
-            <option value="購物">🛍️ 購物</option>
-            <option value="其他">✨ 其他</option>
-          </select>
+          <div class="flex items-center gap-2 flex-wrap">
+            <select id="expenseCategoryFilter" onchange="renderExpenses()" class="bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-700">
+              <option value="ALL">全部分類</option>
+              <option value="機票">✈️ 機票</option>
+              <option value="住宿">🏨 住宿</option>
+              <option value="交通">🚅 交通</option>
+              <option value="滑雪">⛷️ 滑雪</option>
+              <option value="餐飲">🍜 餐飲</option>
+              <option value="門票與體驗">🎟️ 門票與體驗</option>
+              <option value="購物">🛍️ 購物</option>
+              <option value="其他">✨ 其他</option>
+            </select>
+            <button type="button" onclick="openExpenseModal()" class="px-3.5 py-1.5 rounded-xl bg-warmwood hover:bg-amber-800 text-white text-xs font-bold shadow-sm transition flex items-center gap-1 whitespace-nowrap">
+              <span>＋</span> 記一筆支出
+            </button>
+          </div>
         </div>
         <div id="expenseList" class="space-y-2">
           <!-- Rendered by JS -->
@@ -882,23 +887,27 @@
           <label class="block text-xs font-bold text-slate-600 mb-1">項目名稱 *</label>
           <input type="text" id="exTitle" required placeholder="例如：台北↔名古屋來回機票" class="w-full rounded-xl border border-slate-200 px-3 py-2" />
         </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">分類</label>
+          <select id="exCategory" class="w-full rounded-xl border border-slate-200 px-3 py-2 bg-snow">
+            <option value="機票">✈️ 機票</option>
+            <option value="住宿">🏨 住宿</option>
+            <option value="交通">🚅 交通</option>
+            <option value="滑雪">⛷️ 滑雪</option>
+            <option value="餐飲">🍜 餐飲</option>
+            <option value="門票與體驗">🎟️ 門票與體驗</option>
+            <option value="購物">🛍️ 購物</option>
+            <option value="其他">✨ 其他</option>
+          </select>
+        </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">分類</label>
-            <select id="exCategory" class="w-full rounded-xl border border-slate-200 px-3 py-2 bg-snow">
-              <option value="機票">✈️ 機票</option>
-              <option value="住宿">🏨 住宿</option>
-              <option value="交通">🚅 交通</option>
-              <option value="滑雪">⛷️ 滑雪</option>
-              <option value="餐飲">🍜 餐飲</option>
-              <option value="門票與體驗">🎟️ 門票與體驗</option>
-              <option value="購物">🛍️ 購物</option>
-              <option value="其他">✨ 其他</option>
-            </select>
+            <label class="block text-xs font-bold text-slate-600 mb-1">開始日期（選填）</label>
+            <input type="date" id="exDate" class="w-full rounded-xl border border-slate-200 px-3 py-2 bg-snow focus:outline-none focus:ring-2 focus:ring-warmwood/40" />
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">日期（選填）</label>
-            <input type="date" id="exDate" class="w-full rounded-xl border border-slate-200 px-3 py-2 bg-snow focus:outline-none focus:ring-2 focus:ring-warmwood/40" />
+            <label class="block text-xs font-bold text-slate-600 mb-1">結束日期（區間選填）</label>
+            <input type="date" id="exEndDate" class="w-full rounded-xl border border-slate-200 px-3 py-2 bg-snow focus:outline-none focus:ring-2 focus:ring-warmwood/40" />
           </div>
         </div>
         <div class="grid grid-cols-3 gap-2">
@@ -1316,6 +1325,14 @@
       return nights > 0 ? `${s1} - ${s2}（${nights} 晚）` : `${s1} - ${s2}`;
     }
 
+    function formatExpenseDateRange(startIso, endIso) {
+      if (!startIso) return '';
+      const s1 = formatShortCalDate(startIso);
+      if (!endIso || endIso === startIso) return s1;
+      const s2 = formatShortCalDate(endIso);
+      return `${s1} – ${s2}`;
+    }
+
     function getDefaultData() {
       return {
         settings: {
@@ -1465,7 +1482,13 @@
           });
           const mergedExpenses = (Array.isArray(parsed.expenses) ? parsed.expenses : defaults.expenses).map(ex => {
             const iso = ex.isoDate || parseLegacyDateToISO(ex.date, '');
-            return { ...ex, isoDate: iso, date: iso ? formatShortCalDate(iso) : (ex.date || '') };
+            const endIso = ex.endIsoDate || '';
+            return {
+              ...ex,
+              isoDate: iso,
+              endIsoDate: endIso,
+              date: iso ? formatExpenseDateRange(iso, endIso) : (ex.date || '')
+            };
           });
           return {
             settings: { ...defaults.settings, ...(parsed.settings || {}) },
@@ -3114,13 +3137,16 @@
         document.getElementById('editExpenseId').value = ex.id;
         document.getElementById('exTitle').value = ex.title;
         document.getElementById('exCategory').value = ex.category;
-        document.getElementById('exDate').value = ex.isoDate || parseLegacyDateToISO(ex.date, '');
+        const startIso = ex.isoDate || parseLegacyDateToISO(ex.date, '');
+        document.getElementById('exDate').value = startIso;
+        document.getElementById('exEndDate').value = ex.endIsoDate || '';
         document.getElementById('exAmount').value = ex.amount;
         document.getElementById('exCurrency').value = ex.currency;
         document.getElementById('exIsEstimate').checked = !!ex.isEstimate;
       } else {
         document.getElementById('expenseModalTitle').textContent = '記一筆支出';
-        document.getElementById('exDate').value = appData.settings.tripStartDate || '2027-01-11';
+        document.getElementById('exDate').value = appData.settings.tripStartDate || '2027-02-10';
+        document.getElementById('exEndDate').value = '';
       }
       openModal('expenseModal');
     }
@@ -3129,12 +3155,17 @@
       e.preventDefault();
       const editId = document.getElementById('editExpenseId').value;
       const iso = document.getElementById('exDate').value;
+      let endIso = document.getElementById('exEndDate').value;
+      if (iso && endIso && endIso < iso) {
+        endIso = iso;
+      }
       const payload = {
         id: editId || 'e_' + Date.now(),
         title: document.getElementById('exTitle').value.trim(),
         category: document.getElementById('exCategory').value,
         isoDate: iso,
-        date: iso ? formatShortCalDate(iso) : '',
+        endIsoDate: endIso,
+        date: iso ? formatExpenseDateRange(iso, endIso) : '',
         amount: parseFloat(document.getElementById('exAmount').value) || 0,
         currency: document.getElementById('exCurrency').value,
         isEstimate: document.getElementById('exIsEstimate').checked
